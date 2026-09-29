@@ -1,0 +1,333 @@
+package org.itantra.link
+
+import org.itantra.proto.Flags
+import org.itantra.proto.Frame
+import org.itantra.proto.Language
+import org.itantra.proto.MessageType
+import org.junit.Assert.assertArrayEquals
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+/**
+ * The air policy behind [BleBroadcastLink], proved without a radio.
+ *
+ * Every test is a story about chances: a frame that leaves the air before a scanner has
+ * had enough of them is a message lost, and this is where that is made impossible by
+ * construction rather than by hoping the controller is quick.
+ */
+class OnAirTest {
+    private fun frame(
+        type: MessageType,
+        seq: Int,
+        payloadBytes: Int,
+        encrypted: Boolean = true,
+        src: Int = 7,
+    ): ByteArray =
+        Frame(
+            type = type,
+            language = Language.HINDI,
+            seq = seq,
+            flags = Flags.FINAL or (if (encrypted) Flags.ENCRYPTED else 0),
+            src = src,
+            keyId = 0x42,
+            ttl = 3,
+            payload = ByteArray(payloadBytes) { (it + seq).toByte() },
+        ).encode()
+
+    private fun hello(epoch: Int = 1): ByteArray =
+        frame(MessageType.HEARTBEAT, 0, 4, encrypted = false).also { it[10] = epoch.toByte() }
+
+    private fun presence(seq: Int) = frame(MessageType.HEARTBEAT, seq, 30)
+
+    private fun message(
+        seq: Int,
+        bytes: Int = 48,
+        src: Int = 7,
+    ) = frame(MessageType.TEXT, seq, bytes, src = src)
+
+    private fun alert(seq: Int) = frame(MessageType.ALERT, seq, 1)
+
+    private fun air(
+        soft: Int = 200,
+        hard: Int = 1_600,
+        min: Long = 5_000,
+        max: Long = 30_000,
+        waiting: Int = 64,
+    ) = OnAir(soft, hard, min, max, waiting)
+
+    @Test
+    fun `a message stays on the air for its minimum time even when newer ones are waiting`() {
+        val air = air(soft = 100)
+        assertTrue(air.offer(message(1, 60), 0))
+        assertEquals(listOf(1), seqs(air.contents(0)))
+
+        // Two more, neither of which fits beside the first.
+        air.offer(message(2, 60), 100)
+        air.offer(message(3, 60), 200)
+        assertEquals("the first has not had its turn", listOf(1), seqs(air.contents(1_000)))
+        assertEquals(listOf(1), seqs(air.contents(4_999)))
+
+        assertEquals("at five seconds it yields to the next", listOf(2), seqs(air.contents(5_000)))
+        assertEquals(listOf(2), seqs(air.contents(9_999)))
+        assertEquals(listOf(3), seqs(air.contents(10_000)))
+    }
+
+    @Test
+    fun `a message stays up to the maximum when nothing needs the room`() {
+        val air = air()
+        air.offer(message(1), 0)
+        assertEquals("admitted, and timed from then", listOf(1), seqs(air.contents(0)))
+        assertEquals(listOf(1), seqs(air.contents(29_999)))
+        assertEquals(emptyList<Int>(), seqs(air.contents(30_000)))
+    }
+
+    @Test
+    fun `frames that fit together travel together, oldest first`() {
+        val air = air(soft = 200)
+        air.offer(message(1, 40), 0)
+        air.offer(message(2, 40), 10)
+        air.offer(message(3, 40), 20)
+        assertEquals(listOf(1, 2, 3), seqs(air.contents(20)))
+    }
+
+    @Test
+    fun `hello and presence are pinned at the head and only the latest of each is kept`() {
+        val air = air()
+        air.offer(message(5), 0)
+        air.offer(hello(1), 100, announcement = true)
+        air.offer(presence(1), 200, announcement = true)
+        air.offer(hello(2), 300, announcement = true)
+        air.offer(presence(2), 400, announcement = true)
+
+        val onAir = air.contents(400)
+        assertEquals(3, onAir.size)
+        assertArrayEquals("the newest hello leads", hello(2), onAir[0])
+        assertArrayEquals(presence(2), onAir[1])
+        assertEquals(5, seqOf(onAir[2]))
+    }
+
+    @Test
+    fun `pins count against the budget but never block a message for ever`() {
+        val air = air(soft = 100)
+        air.offer(hello(), 0, announcement = true) // 16 B
+        air.offer(presence(1), 0, announcement = true) // 42 B
+        air.offer(message(1, 60), 0) // 72 B: does not fit beside 58 B of pins
+        val onAir = air.contents(0)
+        assertEquals("alone with the pins, over the soft budget, rather than never", 3, onAir.size)
+        assertEquals(1, seqOf(onAir[2]))
+    }
+
+    @Test
+    fun `a frame no advertisement can hold is refused and counted`() {
+        val air = air(soft = 100, hard = 120)
+        assertFalse(air.offer(message(1, 200), 0))
+        assertEquals(1, air.droppedOversize)
+        assertEquals(emptyList<Int>(), seqs(air.contents(0)))
+    }
+
+    @Test
+    fun `an alert jumps the queue`() {
+        val air = air(soft = 100)
+        air.offer(message(1, 80), 0) // 92 B: fills the packet
+        assertEquals(listOf(1), seqs(air.contents(0)))
+        air.offer(message(2, 60), 0) // waits
+        air.offer(alert(3), 0) // 13 B: waits, at the front
+        assertEquals(listOf(1), seqs(air.contents(1_000)))
+        assertEquals("the alert goes before message 2", listOf(3, 2), seqs(air.contents(5_000)))
+    }
+
+    @Test
+    fun `the waiting queue is bounded and the oldest message is the one dropped`() {
+        val air = air(soft = 100, waiting = 2)
+        air.offer(message(1, 60), 0)
+        air.contents(0)
+        assertTrue(air.offer(message(2, 60), 0))
+        assertTrue(air.offer(message(3, 60), 0))
+        assertFalse(air.offer(message(4, 60), 0))
+        assertEquals(1L, air.droppedWaiting)
+        assertEquals(2, air.waitingCount)
+        assertEquals("2 was dropped, 3 and 4 wait", listOf(3), seqs(air.contents(5_000)))
+        assertEquals(listOf(4), seqs(air.contents(10_000)))
+    }
+
+    @Test
+    fun `a full waiting queue never drops an alert to make room`() {
+        val air = air(soft = 100, waiting = 2)
+        air.offer(message(1, 80), 0) // 92 B: fills the packet
+        air.contents(0)
+        air.offer(alert(9), 0)
+        air.offer(message(2, 60), 0)
+        assertFalse(air.offer(message(3, 60), 0))
+        assertEquals("the alert survives; message 2 went", listOf(9, 3), seqs(air.contents(5_000)))
+    }
+
+    @Test
+    fun `the same instant asked twice answers the same, so the radio is left alone`() {
+        val air = air()
+        air.offer(hello(), 0)
+        air.offer(message(1), 0)
+        val first = air.contents(100)
+        val second = air.contents(100)
+        assertEquals(first.size, second.size)
+        first.indices.forEach { assertArrayEquals(first[it], second[it]) }
+    }
+
+    @Test
+    fun `next change is the earliest retirement, or the oldest frame's minimum while something waits`() {
+        val air = air(soft = 100)
+        assertNull(air.nextChangeMillis(0))
+        air.offer(message(1, 60), 1_000)
+        air.contents(1_000)
+        assertEquals("nothing waiting: the maximum stay", 31_000L, air.nextChangeMillis(1_000))
+        air.offer(message(2, 60), 2_000)
+        assertEquals("something waiting: the minimum stay", 6_000L, air.nextChangeMillis(2_000))
+        assertEquals("never in the past", 7_000L, air.nextChangeMillis(7_000))
+    }
+
+    /**
+     * A hello or presence relayed for a unit two hops away must not take this unit's own
+     * pin: pinned, it would replace this unit's announcement on the air and this unit
+     * would vanish from every roster in range while the far one appeared.
+     */
+    @Test
+    fun `another unit's hello and presence queue as messages and leave this unit's pins alone`() {
+        val air = OnAir(softBudget = 200, hardBudget = 1_600, localSrc = 7)
+        air.offer(hello(), 0, announcement = true)
+        air.offer(presence(1), 0, announcement = true)
+        // Relayed, so offered as any other frame is: a relay does not announce this unit.
+        val farHello = frame(MessageType.HEARTBEAT, 0, 4, encrypted = false, src = 9)
+        val farPresence = frame(MessageType.HEARTBEAT, 5, 30, src = 9)
+        air.offer(farHello, 0)
+        air.offer(farPresence, 0)
+
+        val contents = air.contents(0)
+        assertEquals("both pins and both relayed frames are on the air", 4, contents.size)
+        assertEquals("this unit's pins lead", listOf(7, 7, 9, 9), contents.map { it[7].toInt() })
+
+        // A newer own hello replaces the own pin only; the relayed ones stay where they were.
+        air.offer(hello(epoch = 2), 100, announcement = true)
+        val again = air.contents(100)
+        assertEquals(4, again.size)
+        assertEquals(listOf(7, 7, 9, 9), again.map { it[7].toInt() })
+        assertEquals("the pin is the newer hello", 2, again[0][10].toInt())
+    }
+
+    // ── control traffic, which is neither an announcement nor a message ──────
+
+    /**
+     * The bug this distinction exists for, from two handsets on one table.
+     *
+     * A clock-sync ping and this unit's presence are the same frame to anything that
+     * cannot read the payload: `HEARTBEAT`, `ENCRYPTED` set, this unit's `SRC`. Pinned
+     * together in one slot they destroyed each other — the presence stopped going out, so
+     * both operating screens read "0 units", and a pong was overwritten by the next
+     * control frame milliseconds later and never reached the air, so the four round trips
+     * the clock exchange needs never completed and no audio receipt could be converted
+     * into a latency.
+     */
+    @Test
+    fun `a clock-sync frame never evicts this unit's presence`() {
+        val air = OnAir(softBudget = 300, hardBudget = 1_600, localSrc = 7)
+        air.offer(hello(), 0, announcement = true)
+        air.offer(presence(1), 0, announcement = true)
+
+        // A ping, a pong and an audio receipt: sealed heartbeats this unit sent that are
+        // not its announcement. Offered exactly as Session offers them.
+        val ping = frame(MessageType.HEARTBEAT, 11, 10)
+        val pong = frame(MessageType.HEARTBEAT, 12, 26)
+        val receipt = frame(MessageType.HEARTBEAT, 13, 37)
+        air.offer(ping, 10)
+        air.offer(pong, 16)
+        air.offer(receipt, 20)
+
+        val contents = air.contents(20)
+        assertEquals("the pins survive and all three control frames are on the air", 5, contents.size)
+        assertEquals("the presence is still pinned", 1, seqOf(contents[1]))
+        assertEquals(listOf(11, 12, 13), contents.drop(2).map(::seqOf))
+    }
+
+    /**
+     * And they leave again quickly. During a two-way conversation there is one audio
+     * receipt for every message either unit speaks; held as long as a message, they would
+     * fill a 198-byte advertisement with answers to questions nobody is still asking.
+     */
+    @Test
+    fun `control traffic leaves the air long before a message would`() {
+        val air = OnAir(softBudget = 300, hardBudget = 1_600, localSrc = 7)
+        air.offer(message(1), 0)
+        air.offer(frame(MessageType.HEARTBEAT, 11, 10), 0)
+        assertEquals(listOf(1, 11), seqs(air.contents(0)))
+        assertEquals("still up at seven seconds", listOf(1, 11), seqs(air.contents(7_999)))
+        assertEquals("gone at eight, while the message stays", listOf(1), seqs(air.contents(8_000)))
+        assertEquals(listOf(1), seqs(air.contents(29_999)))
+        assertEquals(emptyList<Int>(), seqs(air.contents(30_000)))
+    }
+
+    /** A control frame yields room to a waiting message after two seconds, not five. */
+    @Test
+    fun `control traffic yields the packet sooner than a message`() {
+        val air = OnAir(softBudget = 60, hardBudget = 1_600, localSrc = 7)
+        air.offer(frame(MessageType.HEARTBEAT, 11, 30), 0)
+        assertEquals(listOf(11), seqs(air.contents(0)))
+        air.offer(message(2, 30), 100)
+        assertEquals("not yet", listOf(11), seqs(air.contents(1_999)))
+        assertEquals("at two seconds the message takes the room", listOf(2), seqs(air.contents(2_000)))
+    }
+
+    @Test
+    fun `a blob round-trips several frames and names the advertiser`() {
+        val frames = listOf(hello(), presence(3), message(4, 70))
+        val blob = AirBlob.encode(src = 9, keyId = 0x42, frames = frames)
+        assertEquals(AirBlob.HEADER_BYTES + frames.sumOf { it.size }, blob.size)
+
+        val parsed = AirBlob.decode(blob)
+        assertEquals(9, parsed.src)
+        assertEquals(0x42, parsed.keyId)
+        assertEquals(3, parsed.frames.size)
+        frames.indices.forEach { assertArrayEquals(frames[it], parsed.frames[it]) }
+    }
+
+    @Test
+    fun `a bare frame from the previous version still reads, with its own sender`() {
+        val bare = message(2, src = 11)
+        val parsed = AirBlob.decode(bare)
+        assertEquals(11, parsed.src)
+        assertEquals(0x42, parsed.keyId)
+        assertEquals(1, parsed.frames.size)
+        assertArrayEquals(bare, parsed.frames[0])
+    }
+
+    @Test
+    fun `a truncated tail is dropped and everything before it is kept`() {
+        val frames = listOf(message(1, 30), message(2, 30))
+        val blob = AirBlob.encode(src = 1, keyId = 2, frames = frames)
+        val cut = blob.copyOf(blob.size - 5)
+        val parsed = AirBlob.decode(cut)
+        assertEquals(1, parsed.frames.size)
+        assertArrayEquals(frames[0], parsed.frames[0])
+    }
+
+    @Test
+    fun `garbage after the header yields no frames and does not throw`() {
+        val junk = byteArrayOf(AirBlob.MAGIC.toByte(), 1, 2) + ByteArray(12) { 0x55 }
+        assertTrue(AirBlob.decode(junk).frames.isEmpty())
+        assertTrue(AirBlob.decode(ByteArray(0)).frames.isEmpty())
+        assertTrue(AirBlob.decode(byteArrayOf(AirBlob.MAGIC.toByte())).frames.isEmpty())
+    }
+
+    @Test
+    fun `an unknown advertiser yields no source`() {
+        val blob = AirBlob.encode(src = AirBlob.UNKNOWN, keyId = AirBlob.UNKNOWN, frames = listOf(message(1)))
+        val parsed = AirBlob.decode(blob)
+        assertNull(parsed.src)
+        assertNull(parsed.keyId)
+        assertEquals(1, parsed.frames.size)
+    }
+
+    private fun seqOf(frame: ByteArray): Int = ((frame[2].toInt() and 0xFF) shl 8) or (frame[3].toInt() and 0xFF)
+
+    private fun seqs(frames: List<ByteArray>): List<Int> = frames.map(::seqOf)
+}

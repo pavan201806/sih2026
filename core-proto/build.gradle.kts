@@ -1,0 +1,44 @@
+// PURE JVM. No Android plugin, ever.
+// This is what lets the highest-risk code in the project -- the frame codec --
+// be unit-tested and fuzzed in milliseconds on a desktop rather than minutes on
+// a handset, and it is why the whole transport layer can be proven in week 2
+// before any model exists. See docs/ARCHITECTURE.md section 2.
+plugins {
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kover)
+    alias(libs.plugins.kotlin.serialization)
+}
+
+kotlin { jvmToolchain(17) }
+
+dependencies {
+    implementation(libs.kotlin.coroutines.core)
+    // templates.json is loaded here, in the module that owns the digest. Pure JVM still:
+    // kotlinx-serialization has no Android dependency, so the frame codec and the table
+    // it hashes stay testable in milliseconds on a laptop.
+    implementation(libs.kotlinx.serialization)
+    testImplementation(libs.junit)
+    testImplementation(libs.kotest.property) // property tests: pack/unpack round trip
+    testImplementation(libs.kotest.assertions)
+}
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    compilerOptions.allWarningsAsErrors.set(true) // warnings are errors here only
+}
+
+tasks.test {
+    useJUnit()
+    testLogging { events("passed", "failed", "skipped") }
+}
+
+// W1.8: 90 % line coverage, enforced. This is the only module with a coverage
+// gate -- it holds the frame codec, and a gap here is a defect in the field.
+kover {
+    reports {
+        verify {
+            rule {
+                minBound(90)
+            }
+        }
+    }
+}

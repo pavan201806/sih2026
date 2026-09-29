@@ -1,0 +1,261 @@
+# Interface and interaction
+
+The justification for this project is that it serves people who cannot type. **An interface
+that assumes literacy would refute its own premise.** Every rule below descends from that
+sentence.
+
+> This document specifies interaction — modes, policy, rules. Every screen is drawn at low
+> fidelity in [WIREFRAMES.md](WIREFRAMES.md), including the state variants (transmitting,
+> floor busy, receiving, degraded) that a static list of screens cannot show, and rendered
+> properly in [`iTantra Screens.html`](iTantra%20Screens.html) — open it in a browser to
+> see the interface rather than read it.
+
+## 1. The operating screen
+
+```
+ ┌──────────────────────────────────────────────┐
+ │  BASE · node 01      6 units      ● LINK OK  │
+ ├──────────────────────────────────────────────┤
+ │   PTT · ALL UNITS                 हिन्दी  ▾   │
+ ├──────────────────────────────────────────────┤
+ │                                              │
+ │                                              │
+ │              P U S H   T O   T A L K         │
+ │                                              │
+ │                  (≥ ⅓ of screen)             │
+ │                                              │
+ ├──────────────────────────────────────────────┤
+ │      ALERT      │        POSITION            │
+ ├──────────────────────────────────────────────┤
+ │  Ravi     हमें तुरंत मदद चाहिए          2 s  │
+ │  Base     टीम भेज रहे हैं                8 s  │
+ ├──────────────────────────────────────────────┤
+ │  STT 210 ms  ·  LINK 40 ms  ·  TTS 180 ms    │
+ │  TOTAL 780 ms  ·  RTF 0.22  ·  CPU 1.8 %     │
+ └──────────────────────────────────────────────┘
+```
+
+**The instrumentation strip is permanent, not a debug view.** It is the single most
+persuasive element on the screen in front of a jury scoring 20 % on latency, and hiding it
+behind a developer toggle wastes it.
+
+## 2. The two modes
+
+| Aspect | Push-to-talk — walkie-talkie | Released — telephone |
+| --- | --- | --- |
+| Duplex | Half. One speaker holds the channel | Full. Both directions stream continuously |
+| Capture | Live only while the key is held | Always live, gated by VAD |
+| Endpoint | Key release, 150 ms confirmation | 400 ms trailing silence |
+| Speaker | Muted while transmitting | Active, with barge-in ducking |
+| Floor control | `PTT_CTL` frames announce and release the floor; a busy indicator prevents collisions | Not applicable |
+| Power | Lowest — no idle inference | Higher — continuous VAD |
+| Latency | 800–1200 ms | 1050–1500 ms |
+
+The transmit control is bound both to a large on-screen target **and to the volume-down
+hardware key**, because operators wear gloves and rarely look at the screen. Releasing the
+key is an explicit end-of-utterance signal, which is why push-to-talk mode records lower
+latency than telephone mode — worth demonstrating live rather than explaining.
+
+### Floor states
+
+| State | Indicator | Behaviour |
+| --- | --- | --- |
+| Free | Neutral | Transmit permitted |
+| Held by me | Transmit control lit, haptic on seize | Speaker muted |
+| Held by peer | Busy, peer's name shown | Transmit blocked; a press produces a short haptic refusal, never a dialog |
+| Contended | Both seized within the collision window | Randomised backoff, both told to retry (risk S-05) |
+
+## 3. Alert delivery
+
+The requirement (R8) is that alerts are "announced at highest volume, non-interruptible".
+On Android this is a specific and verifiable sequence, and it is the whole of it — each
+step exists because omitting it produces a silent alert in some real configuration.
+
+| Step | Mechanism | Why |
+| --- | --- | --- |
+| 1. Route away from media | `AudioAttributes.USAGE_ALARM` with `CONTENT_TYPE_SONIFICATION` | Bypasses media volume and, when configured, Do Not Disturb |
+| 2. Force volume | `setStreamVolume(STREAM_ALARM, max, 0)` before playback; the prior level is restored afterwards | A silenced handset must still announce |
+| 3. Hold focus | `AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE`, and **deliberately ignore loss callbacks** | This is the non-interruptible requirement, precisely |
+| 4. Wake the device | `PARTIAL_WAKE_LOCK` plus a full-screen-intent notification | Delivery must succeed on a locked screen |
+| 5. Reinforce | Vibration pattern, high-contrast full-screen visual, message repeated twice | Redundant channels for a noisy environment and a hearing-impaired operator |
+| 6. Guarantee arrival | `ALERT` frames pre-empt the transmit queue and are acknowledged and retried | See [PROTOCOL.md §12](PROTOCOL.md#12-reliability) |
+
+**Restoring the prior volume in step 2 is mandatory** and easy to forget. Leaving a
+handset permanently at maximum alarm volume after one alert is a defect that will be found
+during a demonstration.
+
+### Sending an alert
+
+Alert-class messages require **explicit confirmation** of the recognised text before
+transmission (risk S-03). The confirmation is a single large button showing the recognised
+text and speaking it aloud — so it works for a non-literate operator — with a cancel target
+of equal size. This is the one place where the system deliberately adds latency, and the
+reason is that an alert is the only message type that can cause physical harm if it is
+wrong.
+
+## 4. Inclusive design rules
+
+Normative. A review may reject a change for violating any of these.
+
+1. The transmit target occupies **at least a third of the screen** and is reachable
+   one-handed with gloves.
+2. Every state change is confirmed by **haptics and a spoken cue**, never by a text dialog
+   alone.
+3. **Icons and colour carry primary meaning; text is a secondary channel.** Any screen
+   whose meaning collapses when the text is removed has failed this rule.
+4. **Full operation with the screen off**, via the hardware key.
+5. **High-contrast monochrome palette**, legible in direct sunlight. Colour is used only
+   for state (link, alert, floor), never as the sole carrier of information.
+6. Recognised text is displayed alongside the spoken output, so a **literate** operator can
+   verify what the machine heard — without requiring literacy to use the system.
+7. Minimum touch target 64 dp; the transmit control far exceeds it.
+8. No screen requires more than **two taps** from the operating screen. Settings may be
+   deeper; nothing operational may be.
+9. Text scales to 200 % without truncation or overlap.
+10. Every control has a content description, and the whole operating screen is navigable by
+    TalkBack.
+
+Rule 3 is the one that gets violated. "Add a label" is the reflex fix for an unclear
+control; the correct fix is a clearer icon plus the label.
+
+## 5. Pairing
+
+**There is no group to create and none to join.** Users are not asked to enter
+identifiers, and they are not asked to decide which kind of device they are.
+
+Every unit does exactly the same thing: it shows its own code, and it can scan another's.
+
+```
+ EVERY UNIT, ALWAYS THE SAME SCREEN
+ ──────────────────────────────────
+ On first launch, with nothing to scan:
+   ├ generates a 256-bit AES key        → Keystore
+   ├ derives KEYID = SHA-256(key)[0]
+   ├ takes node 01, template profile
+   └ is immediately usable, alone
+
+ When it scans another unit's code:
+   ├ adopts that unit's key and profile
+   ├ claims the next free node ID
+   └ discards its own key
+```
+
+The asymmetry that used to be a screen — creator versus joiner — is now decided by who
+points the camera. Whoever scans, joins. Nobody has to know which one they are.
+
+Display names are local to each device. Pairing is the most common point of failure in live
+demonstrations, and reducing it to *point at the other phone* removes both the failure and
+the decision (risk P-03). Security properties of the optical path are in
+[SECURITY.md §5](SECURITY.md#5-provisioning).
+
+### Why there are no groups, and no addresses
+
+The `GRP` byte that used to carry a channel number is gone; the header now carries `KEYID`,
+derived from the key and never shown to anyone. Channels were doing no work the key was not
+already doing — a unit that does not hold the key fails the authentication tag and discards
+the frame regardless of what channel byte it saw. What is left is pairing, which is
+unavoidable: the key has to reach the other handset somehow.
+
+Two teams operating in the same place still do not hear each other, because they hold
+different keys. The only capability given up is one handset holding several keys and
+switching between them with a dial — which no requirement asks for, and which the byte is
+still on the wire to support if it is ever wanted.
+
+The destination byte went the same way, and for the same reason. ISRO asks for something
+that "should work like a walkie talkie"; a walkie-talkie has no address book, and if you
+can hear the channel you hear everything on it. `DST` is gone, the header is 10 bytes, and
+the roster and address-selector screens went with it. **Nine screens remain** — see
+[WIREFRAMES.md](WIREFRAMES.md).
+
+This is a one-way door for private messaging. If unit-to-unit calls are ever wanted, `DST`
+returns and the protocol version increments.
+
+## 6. Screens
+
+| Screen | Contents | Depth from operating screen |
+| --- | --- | --- |
+| Operating | The screen in §1 | — |
+| Message log | Last 24 h of sent and received text with delivery state, replayable as audio. Sender names here replace the roster | 1 tap |
+| Mode and transport | PTT/phone toggle and transport selector. **No address selector** — every message reaches every unit | 1 tap |
+| Language | Ten languages, showing which packs are installed | 1 tap |
+| Settings | Packs and storage, provisioning, alert test, metrics export, about and licences | 2 taps |
+| Provisioning | QR display or scan | 2 taps |
+| Metrics | Latency histogram, resource graph, CSV export | 2 taps |
+| Locate list | Every unit heard this run, nearest first, with signal bars | 1 tap |
+| Locate | The walk to one unit: a signal bar, a distance figure, and a sound from either handset | 2 taps |
+
+Each of these is drawn in [WIREFRAMES.md](WIREFRAMES.md), which also covers the build order
+— the interface is never further ahead than the engine feeding it.
+
+The **alert test** control in settings sends an alert to your own device. It exists so that
+step 5 of the demonstration can be rehearsed without a second operator, and so that a user
+can verify alert delivery works on their specific handset — vendor audio policy varies
+enough that this is a real concern, not a convenience.
+
+### The locate screen, and why there is no arrow on it
+
+A phone can measure one thing about another radio: how strongly it hears it. **How
+close** is signal strength -- the bar, the distance figure with its spread, and a sound
+that quickens as the operator closes in. **Which way** is not on the screen. An arrow
+from the two GPS positions against the compass was built and taken off: a handset's fix
+wanders by several metres from second to second, so for the whole of the part of a
+search where an arrow would matter the two fixes are inside their own error and the
+arrow was pointing at noise. Which way is left to the ear, which is the one instrument a
+handset can offer for it.
+
+**How close** is calibrated on the way in. While the positions are far enough apart to
+vouch for the distance, every signal reading is a calibration point, and a line fitted
+through them gives this pair of handsets' own one-metre strength and loss rate. Out
+there the GPS distance is the figure shown large, because it is the better one; once
+the two fixes are inside their combined error the signal's own estimate takes over, and
+the metres on it are measured against that phone rather than assumed for every phone --
+the figures line says `calibrated` when that is so. The signal's rise or fall over the
+last three seconds is shown beside the `SIGNAL` label as `CLOSING` or `FURTHER` -- what
+the sound says to the ear, said to the eye.
+
+**Which handset sounds** is the operator's choice, on the screen: *this phone*, *their
+phone*, or *off*. Both sounds follow the same scale, the distance on a logarithm
+([`Locator.proximityForMetres`](../app/src/main/kotlin/org/itantra/app/engine/Locator.kt)):
+halving the distance is the same step anywhere between thirty metres and half a metre,
+and the rate follows it geometrically, so the beeps come faster by the same factor for
+every step closer, all the way in. A linear rate spends most of its range on the last
+two metres and leaves the first twenty sounding the same.
+
+*This phone* is a Geiger counter: one note, faster and higher as the signal rises, slow
+and low when the signal is lost. *Their phone* asks the target to chirp -- a rising
+pair on the alarm stream at full volume, through a locked screen and a silenced ringer --
+and the searcher walks towards the noise, which two ears place to a few degrees in the
+dark or around a corner. The target hears the searcher's own advertisements and quickens
+its chirp as they close in, so the chirp alone says warmer and colder. The request is
+not gated on distance: an earlier version asked only once the searcher's own estimate
+was inside twenty-five metres, which made the chirp depend on the searcher hearing the
+target before the target was allowed to be heard, and Bluetooth reception is not
+symmetric. The line under the selector says what the choice is doing, and it says
+*chirping* only when the target has said so in its own presence frame -- a request is
+one advertisement and may not have arrived, and a control that reports its wish as a
+fact would say "chirping" over a target that never heard it. Until then it says it is
+asking. The chirp holds for twenty seconds per request and is renewed every five while
+the searcher keeps asking, so a searcher whose handset dies does not leave a target
+chirping in a pocket.
+
+Both sounds are one loop
+([`ToneLoop`](../app/src/main/kotlin/org/itantra/app/platform/ToneLoop.kt)) that writes
+the tone and then the silence as samples, so the audio clock paces it and the gap is
+exactly as long as asked; the silence goes out in twenty-millisecond slices and the gap
+is asked again before each, so three quick steps are heard inside the pause rather than
+after it. The alarm volume is raised to the top while either sound runs and put back
+after, the way an alert does it.
+
+## 7. States the interface must show
+
+A system that silently stops working is worse than one that says it has stopped.
+
+| State | Presentation |
+| --- | --- |
+| `INITIALISING` | Transmit disabled, "loading models" with progress, never a blank screen |
+| `READY` | Transmit enabled, link indicator green |
+| `DEGRADED` | Amber banner with a **reason string**: mic unavailable, link down, thermal throttling, storage full |
+| `UNSECURED` | Permanent red banner whenever the units are paired without encryption. No silent path |
+| `TEMPLATE MISMATCH` | Persistent warning naming the peer; template sending disabled |
+| Floor held by peer | Busy indicator with the peer's name |
+| Low confidence | Recognised text shown with a caution marker before transmission |

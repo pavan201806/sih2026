@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Constraint C2, restated because it changed and the reason matters.
+         There is no background reporting of any kind. The location permission below was
+         added on 2026-09-07 for one feature, finding a unit: a handset's position leaves
+         it only inside a sealed frame on the channel, only while another unit has asked to
+         find it, and never over a network: there is still no HTTP client in this
+         application. It is a runtime permission and the arrow is drawn without it.
+
+         INTERNET is present, and it is not for the internet. Android requires it to open
+         any socket at all, including one that only ever addresses a broadcast address on
+         the local subnet, and ISRO's own description says the data is streamed "through
+         wifi/Bluetooth connected embedded device or another phone". The strongest form of
+         C2, verified by this permission's absence, made a stated requirement impossible
+         to build. So the permission is here and the claim is verified differently: every
+         datagram is sent to a broadcast address, nothing resolves a hostname, and nothing
+         opens an outbound network connection. WifiBroadcastLinkTest asserts the first two; the
+         third is a grep over src/main that returns nothing, recorded as audit item 3 in
+         docs/SECURITY.md. A demonstration in aeroplane mode with the hotspot on shows the
+         property itself rather than a proxy for it.
+
+         Twenty-one android.permission.* entries are declared below. `aapt2 dump permissions`
+         prints twenty-two lines: AndroidX adds a signature-level
+         org.itantra.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION of its own, which is not a
+         platform permission and which no other application can hold. Say twenty-two if
+         somebody counts the dump, and twenty-one if they count this file. (The count was
+         thirteen until 2026-09-07, when finding a unit added the two location permissions
+         and Android 11 support the two legacy Bluetooth ones; Wi-Fi Direct added three
+         more on 2026-09-08.) -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Wi-Fi power save drops broadcast frames before they reach a socket. Without this
+         the channel transmits perfectly and never receives. Not a runtime permission. -->
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+
+    <!-- Wi-Fi Direct, formed by the application rather than in Settings (WifiDirectGroup).
+         The first two are granted at install and are what WifiP2pManager.initialize()
+         demands. NEARBY_WIFI_DEVICES is the Android 13+ runtime permission for finding
+         and joining other handsets over Wi-Fi Direct, declared neverForLocation because
+         nothing here derives a position from it; on Android 12 and below the platform
+         gates the same calls on the location permission declared further down. -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES"
+        android:usesPermissionFlags="neverForLocation" />
+
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <!-- Relay mode: Android 14 requires a foreground service whose job is Bluetooth and
+         Wi-Fi to say so, and to hold this permission to say it. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Required from Android 14 to show an alert over a locked screen. The platform
+         grants it automatically only to alarm and calling apps; anything else has to
+         ask, so the alert path must tolerate not having it (task W5.13). -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- Android 8 to 11 (minSdk 26 to 30) have neither BLUETOOTH_CONNECT nor BLUETOOTH_SCAN;
+         there, opening a socket, listening, or scanning needs these two, which are granted
+         at install. Without them every call in the Bluetooth net threw a SecurityException
+         the loops swallowed, and a handset on Android 11 showed a working application that
+         reached nobody. BLE *scanning* on those versions additionally needs a location
+         permission, which this application deliberately does not declare (see above), so on
+         Android 11 and below the BLE broadcast road is closed and the bonded RFCOMM and
+         Wi-Fi roads carry the traffic. -->
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+
+    <!-- Finding a unit (LOCATE): both handsets share their position inside sealed frames
+         on the channel so the locator can draw an arrow. Nothing is reported anywhere else.
+         Also, on Android 11 and below, what BLE scanning requires. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+
+    <uses-feature android:name="android.hardware.bluetooth" android:required="true" />
+    <!-- Wi-Fi Direct is formed automatically where the handset has it, and the Wi-Fi road
+         still runs over a hotspot or any shared Wi-Fi where it does not. -->
+    <uses-feature android:name="android.hardware.wifi.direct" android:required="false" />
+    <!-- The camera is only for scanning a pairing code, and pairing also works without
+         one, so a device with no camera must still be able to install the app. -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.microphone" android:required="true" />
+
+    <!--
+      enableOnBackInvokedCallback: without it the platform never routes the back gesture to
+      the Compose BackHandler, and logcat said so on every navigation:
+      "OnBackInvokedCallback is not enabled for the application."
+      The chevron worked; the gesture would have left the application instead of returning
+      to the operating screen, and an operator who swipes back off a settings page has left
+      the net.
+    -->
+    <!--
+      The launcher icon is the transmit mark from band C, not the Smart India Hackathon
+      logo. SIH's logo is the organiser's mark: an application wearing it on the home screen
+      reads as SIH's own software rather than an entry to it, and that is a claim this
+      project has no standing to make. "iTantra" is likewise ISRO's title for the problem
+      statement rather than branding of ours - REQUIREMENTS.md section 0 says so - so the
+      icon is the one thing here that is genuinely the application's: the carrier leaving
+      the antenna.
+    -->
+    <application
+        android:name=".ItantraApplication"
+        android:enableOnBackInvokedCallback="true"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:label="iTantra"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.ITantra">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Owns the engine. Bound by the activity; started, and foreground, only when the
+             operator turns relay mode on, so the radios keep listening and rebroadcasting
+             with the screen off. connectedDevice is what that job is called on Android 14;
+             microphone is kept for the open line. -->
+        <service
+            android:name=".service.EngineService"
+            android:foregroundServiceType="microphone|connectedDevice"
+            android:exported="false" />
+    </application>
+</manifest>

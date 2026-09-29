@@ -1,0 +1,170 @@
+package org.itantra.link
+
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
+
+/**
+ * One interface, three physical media. The application never learns which one is
+ * carrying its bytes.
+ *
+ * This abstraction is what lets the whole transport layer be built and proven before
+ * any model exists — a text field stands in for the recogniser and the entire path is
+ * exercised. That is not a convenience; it is why the schedule survives.
+ *
+ * See `docs/TRANSPORT.md` section 1.
+ *
+ * ## Contract
+ *
+ * - [send] MUST be safe to call from any thread and MUST NOT block the caller longer
+ *   than it takes to enqueue.
+ * - [incoming] MUST emit exactly one **complete** frame per emission. De-framing is
+ *   the implementation's job, never the consumer's — see [org.itantra.proto.StreamFramer].
+ * - [state] MUST reach [LinkState.DEGRADED] rather than [LinkState.ERROR] for any
+ *   condition the implementation can recover from by itself.
+ * - An implementation MUST NOT interpret the payload. It sees bytes.
+ */
+interface Link {
+    val name: String
+
+    suspend fun send(frame: ByteArray)
+
+    /**
+     * [send], with one word of context: whether this frame is an alert.
+     *
+     * The mesh lets an operator switch a road off for routine traffic — a demonstration
+     * that wants to show one radio carrying everything, or a unit saving a radio's battery.
+     * An alert ignores that switch and goes down every road that is physically up, because
+     * a preference set on a quiet afternoon must never be the reason an evacuation order
+     * stayed on one handset. The link cannot tell an alert from anything else — it sees
+     * bytes, by contract — so the sender says so here.
+     *
+     * The default ignores the hint. A single-peer link has nothing to choose between.
+     */
+    suspend fun send(
+        frame: ByteArray,
+        urgent: Boolean,
+    ) = send(frame, urgent, announcement = false)
+
+    /**
+     * [send], with a second word of context: whether this frame is this unit's standing
+     * **announcement** of itself — its hello or its presence — rather than traffic.
+     *
+     * ## Why the link has to be told
+     *
+     * A broadcast link keeps a buffer of what it is saying and repeats it (see [OnAir]).
+     * Only the newest hello and the newest presence belong in it: an announcement older
+     * than the one beside it is worth nothing, so each replaces its predecessor in a
+     * pinned slot rather than queueing.
+     *
+     * The link decides that from the bytes, and from the bytes alone it cannot. A
+     * presence and a clock-sync ping are both sealed `HEARTBEAT` frames carrying this
+     * unit's `SRC`; what tells them apart is the *encrypted* payload, which the link by
+     * contract does not read. So every ping, pong and audio receipt was landing in the
+     * presence slot and evicting the announcement that belonged there — the unit stopped
+     * announcing itself, every roster in range emptied, and because the same slot held
+     * only one frame at a time a pong was routinely overwritten before it reached the air.
+     * That is a clock exchange that can never complete and a receipt that never comes
+     * back, from two units sitting on the same table.
+     *
+     * One word from the sender settles it, exactly as `urgent` settles the other thing a
+     * link cannot see. The default is false: traffic, control and anything relayed for
+     * another unit are all *not* this unit's announcement.
+     */
+    suspend fun send(
+        frame: ByteArray,
+        urgent: Boolean,
+        announcement: Boolean,
+    ) = send(frame)
+
+    val incoming: Flow<ByteArray>
+
+    val state: StateFlow<LinkState>
+
+    /** Largest payload a single packet can carry, before framing. */
+    val mtu: Int
+
+    val metrics: StateFlow<LinkMetrics>
+
+    suspend fun connect()
+
+    suspend fun disconnect()
+}
+
+enum class LinkState {
+    IDLE,
+    DISCOVERING,
+    CONNECTED,
+
+    /** Recoverable without user action; the service keeps trying. */
+    DEGRADED,
+
+    /** Not recoverable by the implementation. */
+    ERROR,
+}
+
+/**
+ * What the interface shows about the link, and what feeds `latency.csv`.
+ *
+ * [queueDepth] is the first symptom of a saturated link — a rising value means the
+ * consumer is falling behind before anything is visibly wrong.
+ */
+data class LinkMetrics(
+    val rssi: Int? = null,
+    val roundTripMillis: Long? = null,
+    val framesSent: Long = 0,
+    val framesReceived: Long = 0,
+    val framesLost: Long = 0,
+    val bytesSent: Long = 0,
+    val bytesReceived: Long = 0,
+    val queueDepth: Int = 0,
+) {
+    /** Drives the on-screen byte counter the demonstration points at. */
+    val compressionVersusRawAudio: Double
+        get() = if (bytesSent == 0L) 0.0 else RAW_AUDIO_BYTES_PER_SENTENCE / bytesSent.toDouble()
+
+    private companion object {
+        /** Three seconds of 16 kHz 16-bit mono, the sentence the documents use throughout. */
+        const val RAW_AUDIO_BYTES_PER_SENTENCE = 96_000.0
+    }
+}
+
+/**
+ * Reconnection delay: exponential with jitter, one second to thirty.
+ *
+ * The jitter matters more than it looks. Without it, several units that lost the same
+ * link retry in lockstep and collide repeatedly; with it they spread out. Reset on any
+ * successful frame.
+ *
+ * `docs/TRANSPORT.md` section 8.
+ */
+class Backoff(
+    private val initialMillis: Long = 1_000,
+    private val maxMillis: Long = 30_000,
+    private val multiplier: Double = 2.0,
+    private val jitterFraction: Double = 0.25,
+    private val random: (Double) -> Double = { it * Math.random() },
+) {
+    var attempt: Int = 0
+        private set
+
+    /** @return the delay to wait before the next attempt, jitter included. */
+    fun nextDelayMillis(): Long {
+        val base = initialMillis * Math.pow(multiplier, attempt.toDouble())
+        val capped = minOf(base, maxMillis.toDouble())
+        attempt++
+        val jitter = random(capped * jitterFraction)
+        return (capped - capped * jitterFraction / 2 + jitter).toLong().coerceAtLeast(0)
+    }
+
+    /** Delay that would be used next, without jitter or advancing the attempt. */
+    fun peekBaseMillis(): Long =
+        minOf(
+            initialMillis * Math.pow(multiplier, attempt.toDouble()),
+            maxMillis.toDouble(),
+        ).toLong()
+
+    /** Called on any successful frame. */
+    fun reset() {
+        attempt = 0
+    }
+}
