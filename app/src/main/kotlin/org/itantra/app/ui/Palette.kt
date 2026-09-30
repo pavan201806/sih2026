@@ -246,3 +246,9 @@ val palette: ItantraPalette
     @Composable
     @ReadOnlyComposable
     get() = LocalPalette.current
+
+val ItantraPalette.surfaceContainerLowest: Color get() = paper
+val ItantraPalette.surfaceContainerLow: Color get() = sunken
+val ItantraPalette.surfaceContainer: Color get() = ground
+val ItantraPalette.surfaceContainerHigh: Color get() = sunken
+val ItantraPalette.surfaceContainerHighest: Color get() = hairline

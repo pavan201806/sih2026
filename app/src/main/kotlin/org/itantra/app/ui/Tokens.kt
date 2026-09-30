@@ -68,6 +68,8 @@ object Tokens {
     val RadiusControl: Dp = 2.dp
     val RadiusInset: Dp = 2.dp
 
+    val ZeroShape: androidx.compose.ui.graphics.Shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp)
+
     val Hairline: Dp = 1.dp
     val SignalBorder: Dp = 1.5.dp
     val AlertBorder: Dp = 2.dp

@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
@@ -447,39 +448,232 @@ private fun UnsecuredBar() {
     }
 }
 
+/**
+ * Text size preference screen.
+ */
 @Composable
-fun BackHeader(title: String, onBack: () -> Unit) {
+fun TextSizeScreen(
+    onBack: () -> Unit,
+    scale: Float,
+    onScale: (Float) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val p = palette
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .heightIn(min = Tokens.StatusBand)
-            .background(p.surfaceContainerLowest)
-            .border(Tokens.Hairline, p.hairline)
-            .padding(horizontal = Tokens.ScreenMargin),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
+    val percent = Math.round(LocalDensity.current.fontScale * 100)
+    // 85 % sits at the left end and 200 % at the right, which is the range rule 9 names.
+    val fraction = ((scale - MIN_SCALE) / (MAX_SCALE - MIN_SCALE)).coerceIn(0f, 1f)
+
+    Column(
+        modifier
+            .fillMaxSize()
+            .background(p.ground)
+            .windowInsetsPadding(WindowInsets.safeDrawing),
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.clickable { onBack() },
+        BackHeader("Text size", onBack)
+
+        Column(
+            Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 12.dp, vertical = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Box(
+            SectionLabel("TEXT SIZE")
+
+            Column(
                 Modifier
-                    .heightIn(min = Tokens.TouchTarget)
-                    .width(Tokens.TouchTarget),
-                contentAlignment = Alignment.CenterStart,
+                    .fillMaxWidth()
+                    .background(p.surfaceContainerLowest, RoundedCornerShape(Tokens.RadiusTile))
+                    .border(Tokens.Hairline, p.hairline, RoundedCornerShape(Tokens.RadiusTile))
+                    .padding(horizontal = 20.dp, vertical = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(18.dp),
             ) {
-                Text("‹", fontSize = 32.sp, color = p.ink)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    Text("A", fontSize = Tokens.Status, color = p.muted)
+                    Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+                        Box(
+                            Modifier
+                                .fillMaxWidth()
+                                .height(5.dp)
+                                .background(p.sunken, RoundedCornerShape(Tokens.RadiusPill)),
+                        )
+                        Box(
+                            Modifier
+                                .fillMaxWidth(fraction.coerceAtLeast(0.02f))
+                                .height(5.dp)
+                                .background(p.periwinkle.core, RoundedCornerShape(Tokens.RadiusPill)),
+                        )
+                    }
+                    Text("A", fontSize = Tokens.Headline, color = p.ink)
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Instrument("85 %", p.muted)
+                    Instrument("$percent %", p.periwinkle.deep)
+                    Instrument("200 %", p.muted)
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    ScaleButton(
+                        "A−",
+                        "Smaller text",
+                        enabled = scale > MIN_SCALE + 0.01f,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        onScale((scale - STEP).coerceAtLeast(MIN_SCALE))
+                    }
+                    ScaleButton(
+                        "A+",
+                        "Larger text",
+                        enabled = scale < MAX_SCALE - 0.01f,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        onScale((scale + STEP).coerceAtMost(MAX_SCALE))
+                    }
+                }
             }
+
             Text(
-                title,
-                fontSize = Tokens.Subtitle,
-                fontWeight = FontWeight.Bold,
-                color = p.ink,
+                "On top of the system setting, and kept across restarts. " +
+                    "Every screen holds its layout to 200 % without truncating.",
+                fontSize = Tokens.Label,
+                lineHeight = Tokens.Label * 1.5f,
+                color = p.muted,
+                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+            )
+
+            SectionLabel("PREVIEW AT THIS SIZE")
+
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .background(p.surfaceContainerLowest, RoundedCornerShape(Tokens.RadiusTile))
+                    .border(Tokens.Hairline, p.hairline, RoundedCornerShape(Tokens.RadiusTile)),
+            ) {
+                RampRow("ALERT", "display", Tokens.Display, FontWeight.Bold, first = true)
+                RampRow("Push to talk", "title", Tokens.Title, FontWeight.Bold)
+                RampRow("need help now, two injured", "body", Tokens.Body, FontWeight.Normal)
+                RampRow("हिन्दी सहायता", "indic 1.4×", Tokens.Subtitle, FontWeight.SemiBold, indic = true)
+                RampRow("TOTAL 780 ms · 44 B", "instrument", Tokens.Instrument, FontWeight.Medium, mono = true)
+            }
+        }
+
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .background(p.surfaceContainerLowest)
+                .padding(
+                    start = Tokens.ScreenMargin,
+                    end = Tokens.ScreenMargin,
+                    top = 12.dp,
+                    bottom = Tokens.ScreenMargin,
+                ),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Box(Modifier.padding(top = 6.dp).size(7.dp).background(p.orchid.core, CircleShape))
+            Text(
+                "Indic scripts reserve 1.4× the Latin line box at every size, so matras and " +
+                    "conjuncts never clip.",
+                fontSize = Tokens.Label,
+                lineHeight = Tokens.Label * 1.45f,
+                color = p.muted,
             )
         }
     }
+}
+
+@Composable
+private fun RampRow(
+    sample: String,
+    role: String,
+    size: androidx.compose.ui.unit.TextUnit,
+    weight: FontWeight,
+    first: Boolean = false,
+    indic: Boolean = false,
+    mono: Boolean = false,
+) {
+    val p = palette
+    if (!first) Box(Modifier.fillMaxWidth().height(1.dp).background(p.sunken))
+    Row(
+        Modifier.fillMaxWidth().padding(14.dp),
+        verticalAlignment = Alignment.Bottom,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(
+            sample,
+            fontSize = size,
+            fontWeight = weight,
+            fontFamily = if (mono) FontFamily.Monospace else FontFamily.Default,
+            lineHeight = if (indic) size * Tokens.INDIC_LINE_HEIGHT else size * 1.2f,
+            color = if (mono) p.sky.deep else p.ink,
+            modifier = Modifier.weight(1f),
+        )
+        Instrument(role, p.muted)
+    }
+}
+
+@Composable
+private fun ScaleButton(
+    label: String,
+    description: String,
+    enabled: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    val p = palette
+    Column(
+        modifier
+            .heightIn(min = Tokens.TouchTarget)
+            .background(if (enabled) p.periwinkle.tint else p.sunken, RoundedCornerShape(Tokens.RadiusControl))
+            .border(
+                Tokens.Hairline,
+                if (enabled) p.periwinkle.mid else p.hairline,
+                RoundedCornerShape(Tokens.RadiusControl),
+            )
+            .clickable(enabled = enabled, onClick = onClick)
+            .semantics { contentDescription = description },
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text(
+            label,
+            fontSize = Tokens.Title,
+            fontWeight = FontWeight.Bold,
+            color = if (enabled) p.periwinkle.deep else p.muted,
+        )
+    }
+}
+
+private const val MIN_SCALE = 0.85f
+private const val MAX_SCALE = 2.0f
+private const val STEP = 0.15f
+
+@Composable
+private fun SectionLabel(text: String) {
+    val p = palette
+    Text(
+        text,
+        fontSize = Tokens.Instrument,
+        fontFamily = FontFamily.Monospace,
+        fontWeight = FontWeight.Medium,
+        color = p.muted,
+        modifier = Modifier.padding(start = 4.dp),
+    )
+}
+
+@Composable
+private fun Instrument(
+    text: String,
+    colour: Color,
+) {
+    Text(
+        text,
+        fontSize = Tokens.Instrument,
+        fontFamily = FontFamily.Monospace,
+        fontWeight = FontWeight.Medium,
+        color = colour,
+    )
 }
 
 private fun megabytes(bytes: Long): String =

@@ -1,6 +1,5 @@
 package org.itantra.app.ui
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -13,15 +12,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -467,7 +463,7 @@ private fun RealLanguageModelCard(
                     }
 
                     Text(
-                        text = "${formatBytes(progressState.bytesDownloaded)} / ${formatBytes(progressState.totalBytes)}",
+                        text = "${formatBytes(progressState.totalDownloadedBytes)} / ${formatBytes(progressState.totalPackBytes)}",
                         fontSize = 8.sp,
                         fontFamily = FontFamily.Monospace,
                         color = p.muted,
@@ -602,32 +598,42 @@ private fun CapabilityStatusChip(
 
 private fun getAvailableLanguagePacks(context: android.content.Context): List<LanguagePackInfo> {
     val store = ModelStore(context)
-    val knownLanguages = listOf(
-        Triple("en", "English", "English"),
-        Triple("hi", "Hindi", "हिन्दी"),
-        Triple("te", "Telugu", "తెలుగు"),
-        Triple("ta", "Tamil", "தமிழ்"),
-        Triple("mr", "Marathi", "मराठी"),
+    val index = InstallIndex(context)
+
+    val definitions = listOf(
+        Triple("en", "English" to "English", "Latin"),
+        Triple("hi", "Hindi" to "हिन्दी", "Devanagari"),
+        Triple("te", "Telugu" to "తెలుగు", "Telugu"),
+        Triple("bn", "Bengali" to "বাংলা", "Bengali"),
+        Triple("mr", "Marathi" to "मराठी", "Devanagari"),
+        Triple("ta", "Tamil" to "தமிழ்", "Tamil"),
+        Triple("gu", "Gujarati" to "ગુજરાતી", "Gujarati"),
+        Triple("kn", "Kannada" to "ಕನ್ನಡ", "Kannada"),
+        Triple("ml", "Malayalam" to "മലയാളം", "Malayalam"),
+        Triple("or", "Odia" to "ଓଡ଼ିଆ", "Odia"),
     )
 
-    return knownLanguages.map { (code, english, native) ->
-        val items = InstallIndex.itemsForLanguage(code)
-        val sttItems = items.filter { it.type == InstallIndex.ModelType.STT }
-        val ttsItems = items.filter { it.type == InstallIndex.ModelType.TTS }
+    return definitions.map { (code, names, script) ->
+        val items = index.downloadableFor(code)
+        val asrItem = items.firstOrNull { it.kind == "recogniser" }
+        val ttsItem = items.firstOrNull { it.kind == "voice" }
 
-        val sttBytes = sttItems.sumOf { it.sizeBytes }
-        val ttsBytes = ttsItems.sumOf { it.sizeBytes }
+        val hasStt = asrItem != null
+        val hasTts = ttsItem != null
 
-        val isSttInstalled = store.isSttInstalled(code)
-        val isTtsInstalled = if (ttsItems.isNotEmpty()) store.isTtsInstalled(code) else true
+        val sttBytes = asrItem?.bytes ?: 0L
+        val ttsBytes = ttsItem?.bytes ?: 0L
+
+        val isSttInstalled = store.hasPack(code)
+        val isTtsInstalled = if (hasTts) store.hasVoice(code) else false
 
         LanguagePackInfo(
             languageCode = code,
-            englishName = english,
-            nativeName = native,
-            scriptName = native,
-            hasStt = sttItems.isNotEmpty(),
-            hasTts = ttsItems.isNotEmpty(),
+            englishName = names.first,
+            nativeName = names.second,
+            scriptName = script,
+            hasStt = hasStt,
+            hasTts = hasTts,
             sttBytes = sttBytes,
             ttsBytes = ttsBytes,
             isSttInstalled = isSttInstalled,
@@ -637,11 +643,18 @@ private fun getAvailableLanguagePacks(context: android.content.Context): List<La
 }
 
 private fun formatBytes(bytes: Long): String {
-    if (bytes <= 0) return "0 MB"
-    val mb = bytes.toDouble() / (1024.0 * 1024.0)
-    return if (mb >= 1024.0) {
-        String.format(java.util.Locale.ROOT, "%.2f GB", mb / 1024.0)
-    } else {
-        String.format(java.util.Locale.ROOT, "%.1f MB", mb)
+    return when {
+        bytes >= 1024L * 1024L * 1024L -> "%.1f GB".format(java.util.Locale.ROOT, bytes / (1024.0 * 1024.0 * 1024.0))
+        bytes >= 1024L * 1024L -> "%.0f MB".format(java.util.Locale.ROOT, bytes / (1024.0 * 1024.0))
+        bytes >= 1024L -> "%.0f KB".format(java.util.Locale.ROOT, bytes / 1024.0)
+        else -> "$bytes B"
+    }
+}
+
+private fun formatSpeed(bytesPerSecond: Long): String {
+    return when {
+        bytesPerSecond >= 1024L * 1024L -> "%.1f MB/s".format(java.util.Locale.ROOT, bytesPerSecond / (1024.0 * 1024.0))
+        bytesPerSecond >= 1024L -> "%.0f KB/s".format(java.util.Locale.ROOT, bytesPerSecond / 1024.0)
+        else -> "$bytesPerSecond B/s"
     }
 }
