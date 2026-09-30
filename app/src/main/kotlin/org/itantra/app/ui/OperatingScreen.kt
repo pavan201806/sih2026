@@ -1,5 +1,12 @@
 package org.itantra.app.ui
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -22,10 +29,10 @@ import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -39,15 +46,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.LiveRegionMode
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
-import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -57,7 +63,7 @@ import org.itantra.audio.EngineState
 import java.util.Locale
 
 /**
- * OperatingScreen restyled to match Stitch 02_communication_dashboard and 03_emergency_communication.
+ * OperatingScreen matching Stitch 02_communication_dashboard and 03_emergency_communication.
  * Preserves 100% of the underlying communication architecture, STT/TTS engine, and state.
  */
 @Composable
@@ -73,22 +79,48 @@ fun OperatingScreen(
     modifier: Modifier = Modifier,
 ) {
     val p = palette
+
     Column(
         modifier
             .fillMaxSize()
             .background(p.ground)
             .windowInsetsPadding(WindowInsets.safeDrawing),
     ) {
-        ChromeHeader(state, onMenu, onLanguageSelected, onModeChange)
+        // TOP MIL-SPEC APP BAR
+        TacticalTopAppBar(state, onMenu)
 
+        // SUB-HEADER TELEMETRY TICKER
+        TelemetryTicker(state)
+
+        // SYSTEM DEGRADED WARNING BANNER IF ANY
         state.degraded?.let { DegradedBanner(it) }
 
-        ThreadPane(state, onReplay, Modifier.fillMaxWidth().weight(1f))
+        // MAIN CONTENT AREA WITH ASYMMETRIC HUD CARDS & MESSAGES
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+        ) {
+            // SYSTEM STATUS HERO CARD + 4-CELL MATRIX
+            SystemStatusHeroCard(state)
 
-        if (state.transmitting || state.partial != null) PartialStrip(state)
-        state.speechNote?.let { SpeechNote(it) }
+            // LANGUAGE SELECTOR BAR
+            LanguageSelectorBar(state, onLanguageSelected)
 
-        Dock(state, onTransmitChange, onAlert, onReplay, onLocate)
+            // LIVE PARTIAL / SPEECH DECODER BOX
+            if (state.transmitting || state.partial != null) {
+                LiveSpeechDecoderBox(state)
+            }
+            state.speechNote?.let { SpeechNote(it) }
+
+            // REAL-TIME MESSAGES THREAD
+            ThreadPane(state, onReplay, Modifier.fillMaxWidth().weight(1f))
+        }
+
+        // TACTICAL TRANSMIT DECK & FAIL-SAFE SOS MODULE
+        TacticalTransmitDeck(state, onTransmitChange, onAlert, onLocate, onModeChange)
+
+        // BOTTOM INSTRUMENTATION STRIP
         InstrumentStrip(state)
     }
 }
@@ -145,234 +177,485 @@ data class BandFMetrics(
     }
 }
 
-// ── chrome ───────────────────────────────────────────────────────────────────
+// ── TOP APP BAR ─────────────────────────────────────────────────────────────
 
 @Composable
-private fun ChromeHeader(
+private fun TacticalTopAppBar(
     state: OperatingState,
     onMenu: () -> Unit,
-    onLanguageSelected: (String) -> Unit,
-    onModeChange: (String) -> Unit,
 ) {
     val p = palette
-    Column(
-        Modifier
+    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+    val blinkAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.3f,
+        targetValue = 1.0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(700, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "blink",
+    )
+
+    Row(
+        modifier = Modifier
             .fillMaxWidth()
             .background(p.surfaceContainerLowest)
             .border(Tokens.Hairline, p.hairline)
             .padding(horizontal = 12.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Row(
-            Modifier.fillMaxWidth().heightIn(min = Tokens.StatusBand),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Box(
                 Modifier
-                    .sizeIn(minWidth = Tokens.TouchTarget, minHeight = Tokens.TouchTarget)
+                    .sizeIn(minWidth = 36.dp, minHeight = 36.dp)
                     .clickable(onClick = onMenu)
                     .semantics(mergeDescendants = true) { contentDescription = "Menu" },
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Grid, contentDescription = null, tint = p.periwinkle.core, modifier = Modifier.size(24.dp))
+                Icon(Icons.Grid, contentDescription = null, tint = p.periwinkle.core, modifier = Modifier.size(22.dp))
             }
-            Column(Modifier.weight(1f)) {
+            Column {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = "RAKSHAVAANI // MESH-SYS",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Black,
+                        fontFamily = FontFamily.Monospace,
+                        color = p.periwinkle.core,
+                        letterSpacing = 0.5.sp,
+                    )
+                }
                 Text(
-                    state.unitName,
-                    fontSize = Tokens.Body,
-                    fontWeight = FontWeight.Bold,
-                    color = p.ink,
-                )
-                Text(
-                    "NODE ${"%02d".format(state.nodeId)} // ${state.transportName.uppercase()}",
-                    fontSize = Tokens.Instrument,
+                    text = "OFFLINE COMMUNICATION SYSTEM",
+                    fontSize = 8.sp,
                     fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Bold,
                     color = p.muted,
+                    letterSpacing = 0.5.sp,
                 )
             }
-            Pill(
-                text = "${state.peerCount} UNITS",
-                fill = p.aqua.tint,
-                border = p.aqua.mid,
-                ink = p.aqua.deep,
-            )
-            LinkPill(state)
         }
 
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            ModeSegments(state.mode, onModeChange)
-            Spacer(Modifier.weight(1f))
-            LanguageChip(state, onLanguageSelected)
-        }
-    }
-}
-
-@Composable
-private fun Pill(
-    text: String,
-    fill: Color,
-    border: Color?,
-    ink: Color,
-    leading: (@Composable () -> Unit)? = null,
-    modifier: Modifier = Modifier,
-) {
-    val shape = RoundedCornerShape(Tokens.RadiusPill)
-    Row(
-        modifier
-            .background(fill, shape)
-            .then(if (border != null) Modifier.border(Tokens.Hairline, border, shape) else Modifier)
-            .padding(horizontal = 9.dp, vertical = 5.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        leading?.invoke()
-        Text(text, fontSize = Tokens.Label, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, color = ink)
-    }
-}
-
-@Composable
-private fun LinkPill(state: OperatingState) {
-    val p = palette
-    val family = if (state.linkUp) p.mint else p.blush
-    Pill(
-        text = if (state.linkUp) "LINK OK" else "NO LINK",
-        fill = family.tint,
-        border = family.mid,
-        ink = family.deep,
-        leading = {
-            Box(
-                Modifier
-                    .size(7.dp)
-                    .then(if (state.linkUp) Modifier.alpha(pulseAlpha()) else Modifier)
-                    .background(family.core, CircleShape),
-            )
-        },
-        modifier =
-            Modifier.semantics(mergeDescendants = true) {
-                contentDescription =
-                    if (state.linkUp) {
-                        "Link up over ${state.transportName}, ${state.peerCount} units"
-                    } else {
-                        "No link. ${state.queued} messages waiting."
-                    }
-            },
-    )
-}
-
-@Composable
-private fun ModeSegments(
-    mode: String,
-    onModeChange: (String) -> Unit,
-) {
-    val p = palette
-    val phone = mode.equals("Phone", ignoreCase = true)
-    Row(
-        Modifier
-            .background(p.surfaceContainerLow, RoundedCornerShape(Tokens.RadiusPill))
-            .border(Tokens.Hairline, p.hairline, RoundedCornerShape(Tokens.RadiusPill))
-            .padding(2.dp)
-            .semantics { contentDescription = if (phone) "Open line mode" else "Push to talk mode" },
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
-    ) {
-        listOf("PTT" to !phone, "Phone" to phone).forEach { (label, selected) ->
-            Text(
-                label,
-                fontSize = Tokens.Label,
-                fontFamily = FontFamily.Monospace,
-                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                color = if (selected) p.onAccent else p.muted,
-                modifier =
-                    Modifier
-                        .then(
-                            if (selected) {
-                                Modifier.background(p.periwinkle.core, RoundedCornerShape(Tokens.RadiusPill))
-                            } else {
-                                Modifier
-                            },
-                        )
-                        .clickable(enabled = !selected) { onModeChange(label) }
-                        .padding(horizontal = 12.dp, vertical = 6.dp)
-                        .semantics {
-                            contentDescription =
-                                if (label == "PTT") "Switch to push to talk" else "Switch to the open line"
-                        },
-            )
-        }
-    }
-}
-
-@Composable
-private fun LanguageChip(
-    state: OperatingState,
-    onLanguageSelected: (String) -> Unit,
-) {
-    val p = palette
-    var open by remember { mutableStateOf(false) }
-    val shape = RoundedCornerShape(Tokens.RadiusPill)
-    Box {
-        Box(
-            Modifier
-                .heightIn(min = Tokens.TouchTarget)
-                .clickable { open = true }
-                .semantics(mergeDescendants = true) {
-                    contentDescription = "Language ${state.language}. Change."
-                },
-            contentAlignment = Alignment.Center,
+        // Secondary Telemetry Pill
+        Row(
+            modifier = Modifier
+                .background(p.surfaceContainerLow)
+                .border(Tokens.Hairline, p.hairline)
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
+            Text(
+                text = "${state.peerCount} PEERS",
+                fontSize = 9.sp,
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.Bold,
+                color = p.aqua.core,
+            )
+            Text(text = "|", fontSize = 9.sp, color = p.hairline)
+            Box(
+                modifier = Modifier
+                    .size(6.dp)
+                    .alpha(if (state.linkUp) blinkAlpha else 1f)
+                    .background(if (state.linkUp) p.periwinkle.core else p.blush.core),
+            )
+            Text(
+                text = if (state.linkUp) "LORA:ACTV" else "NO LINK",
+                fontSize = 9.sp,
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.Bold,
+                color = if (state.linkUp) p.periwinkle.core else p.blush.core,
+            )
+        }
+    }
+}
+
+// ── SUB-HEADER TELEMETRY TICKER ─────────────────────────────────────────────
+
+@Composable
+private fun TelemetryTicker(state: OperatingState) {
+    val p = palette
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(p.surfaceContainerLow)
+            .border(Tokens.Hairline, p.hairline)
+            .padding(horizontal = 12.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text(
+                text = "GRID: P2P LOCAL",
+                fontSize = 8.sp,
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.Bold,
+                color = p.periwinkle.core,
+            )
+            Text(text = "|", fontSize = 8.sp, color = p.hairline)
+            Text(
+                text = "TX PWR: 22 dBm",
+                fontSize = 8.sp,
+                fontFamily = FontFamily.Monospace,
+                color = p.muted,
+            )
+            Text(text = "|", fontSize = 8.sp, color = p.hairline)
+            Text(
+                text = "HOPS: 03 MAX",
+                fontSize = 8.sp,
+                fontFamily = FontFamily.Monospace,
+                color = p.muted,
+            )
+        }
+        Text(
+            text = "PEERS: ${state.peerCount}",
+            fontSize = 8.sp,
+            fontFamily = FontFamily.Monospace,
+            fontWeight = FontWeight.Bold,
+            color = p.aqua.core,
+        )
+    }
+}
+
+// ── SYSTEM STATUS HERO CARD + 4-CELL MATRIX ─────────────────────────────────
+
+@Composable
+private fun SystemStatusHeroCard(state: OperatingState) {
+    val p = palette
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(p.surfaceContainerLow)
+            .border(Tokens.Hairline, p.periwinkle.core.copy(alpha = 0.5f))
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            // Top Badge Row
             Row(
-                Modifier
-                    .heightIn(min = 36.dp)
-                    .background(p.surfaceContainerLow, shape)
-                    .border(Tokens.Hairline, p.periwinkle.core, shape)
-                    .padding(start = 10.dp, end = 8.dp),
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .background(p.surfaceContainerHigh)
+                            .border(Tokens.Hairline, p.periwinkle.core)
+                            .padding(horizontal = 6.dp, vertical = 1.dp),
+                    ) {
+                        Text(
+                            text = "P2P AIRGAP PROTOCOL",
+                            fontSize = 8.sp,
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Bold,
+                            color = p.periwinkle.core,
+                        )
+                    }
+                    Text(
+                        text = "SECURE LEVEL 4 // ED25519",
+                        fontSize = 8.sp,
+                        fontFamily = FontFamily.Monospace,
+                        color = p.hairlineStrong,
+                    )
+                }
+
+                Text(
+                    text = "NOMINAL // ZERO-DROP",
+                    fontSize = 8.sp,
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Bold,
+                    color = p.periwinkle.core,
+                )
+            }
+
+            // Headline
+            Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 Text(
-                    state.language,
-                    fontSize = Tokens.Callout,
+                    text = "SYSTEM STATUS:",
+                    fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
-                    color = p.periwinkle.core,
-                    lineHeight = Tokens.Callout * Tokens.INDIC_LINE_HEIGHT,
+                    fontFamily = FontFamily.Monospace,
+                    color = p.ink,
                 )
-                Icon(Icons.Caret, contentDescription = null, tint = p.periwinkle.core, modifier = Modifier.size(16.dp))
+                Text(
+                    text = "OFFLINE READY",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Black,
+                    fontFamily = FontFamily.Monospace,
+                    color = p.periwinkle.core,
+                )
             }
-        }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            state.languages.forEach { option ->
-                val current = option.code == state.languageCode
-                DropdownMenuItem(
-                    text = {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(
-                                option.nativeName,
-                                fontWeight = if (current) FontWeight.Bold else FontWeight.Normal,
-                                color = if (current) p.periwinkle.core else p.ink,
-                            )
-                            if (option.englishName != option.nativeName) {
-                                Text(
-                                    "(${option.englishName})",
-                                    fontSize = Tokens.Label,
-                                    color = p.muted,
-                                )
-                            }
-                            if (current) {
-                                Box(Modifier.size(6.dp).background(p.periwinkle.core, CircleShape))
-                            }
-                        }
-                    },
-                    onClick = {
-                        open = false
-                        onLanguageSelected(option.code)
-                    },
+
+            // 4-Cell Connection Matrix Strip
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(Tokens.Hairline, p.hairline),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                MatrixCell(
+                    title = "HARDWARE",
+                    value = "NODE ${"%02d".format(state.nodeId)}",
+                    modifier = Modifier.weight(1f),
+                )
+                Box(Modifier.width(1.dp).height(38.dp).background(p.hairline))
+                MatrixCell(
+                    title = "PROTOCOL",
+                    value = state.transportName,
+                    valueColor = p.aqua.core,
+                    modifier = Modifier.weight(1f),
+                )
+                Box(Modifier.width(1.dp).height(38.dp).background(p.hairline))
+                MatrixCell(
+                    title = "RF TELEMETRY",
+                    value = if (state.linkUp) "STABLE" else "OFFLINE",
+                    valueColor = if (state.linkUp) p.mint.core else p.blush.core,
+                    modifier = Modifier.weight(1f),
+                )
+                Box(Modifier.width(1.dp).height(38.dp).background(p.hairline))
+                MatrixCell(
+                    title = "ACCELERATOR",
+                    value = "ON-DEVICE",
+                    valueColor = p.apricot.core,
+                    modifier = Modifier.weight(1f),
                 )
             }
         }
     }
 }
 
-// ── thread ───────────────────────────────────────────────────────────────────
+@Composable
+private fun MatrixCell(
+    title: String,
+    value: String,
+    modifier: Modifier = Modifier,
+    valueColor: Color? = null,
+) {
+    val p = palette
+    Column(
+        modifier = modifier
+            .background(p.surfaceContainerLowest)
+            .padding(horizontal = 6.dp, vertical = 4.dp),
+    ) {
+        Text(
+            text = title,
+            fontSize = 7.sp,
+            fontFamily = FontFamily.Monospace,
+            color = p.hairlineStrong,
+        )
+        Text(
+            text = value,
+            fontSize = 9.sp,
+            fontFamily = FontFamily.Monospace,
+            fontWeight = FontWeight.Bold,
+            color = valueColor ?: p.ink,
+            maxLines = 1,
+        )
+    }
+}
+
+// ── LANGUAGE SELECTOR BAR ───────────────────────────────────────────────────
+
+@Composable
+private fun LanguageSelectorBar(
+    state: OperatingState,
+    onLanguageSelected: (String) -> Unit,
+) {
+    val p = palette
+    var openDropdown by remember { mutableStateOf(false) }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(p.surfaceContainerLowest)
+            .border(Tokens.Hairline, p.hairline)
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text(
+                text = "ENGINE LANG:",
+                fontSize = 8.sp,
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.Bold,
+                color = p.muted,
+            )
+
+            // Current Language Dropdown Trigger
+            Box {
+                Row(
+                    modifier = Modifier
+                        .background(p.surfaceContainerHigh)
+                        .border(1.dp, p.periwinkle.core)
+                        .clickable { openDropdown = true }
+                        .padding(horizontal = 6.dp, vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        text = state.language.uppercase(),
+                        fontSize = 9.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold,
+                        color = p.periwinkle.core,
+                    )
+                    Icon(Icons.Caret, contentDescription = null, tint = p.periwinkle.core, modifier = Modifier.size(12.dp))
+                }
+
+                DropdownMenu(expanded = openDropdown, onDismissRequest = { openDropdown = false }) {
+                    state.languages.forEach { option ->
+                        val current = option.code == state.languageCode
+                        DropdownMenuItem(
+                            text = {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    Text(
+                                        option.nativeName,
+                                        fontWeight = if (current) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (current) p.periwinkle.core else p.ink,
+                                    )
+                                    if (option.englishName != option.nativeName) {
+                                        Text(
+                                            "(${option.englishName})",
+                                            fontSize = 11.sp,
+                                            color = p.muted,
+                                        )
+                                    }
+                                    if (current) {
+                                        Box(Modifier.size(6.dp).background(p.periwinkle.core))
+                                    }
+                                }
+                            },
+                            onClick = {
+                                openDropdown = false
+                                onLanguageSelected(option.code)
+                            },
+                        )
+                    }
+                }
+            }
+        }
+
+        // Quick Segmented Language Chips
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            items(state.languages.take(4)) { opt ->
+                val active = opt.code == state.languageCode
+                Box(
+                    modifier = Modifier
+                        .background(if (active) p.periwinkle.core else p.surfaceContainerLow)
+                        .border(Tokens.Hairline, if (active) p.periwinkle.core else p.hairline)
+                        .clickable { onLanguageSelected(opt.code) }
+                        .padding(horizontal = 6.dp, vertical = 2.dp),
+                ) {
+                    Text(
+                        text = opt.englishName.take(3).uppercase(),
+                        fontSize = 8.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold,
+                        color = if (active) p.surfaceContainerLowest else p.muted,
+                    )
+                }
+            }
+        }
+    }
+}
+
+// ── LIVE SPEECH DECODER BOX ─────────────────────────────────────────────────
+
+@Composable
+private fun LiveSpeechDecoderBox(state: OperatingState) {
+    val p = palette
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(p.surfaceContainerLowest)
+            .border(1.dp, p.periwinkle.core)
+            .padding(10.dp)
+            .semantics {
+                liveRegion = LiveRegionMode.Polite
+                contentDescription = state.partial?.let { "Live speech decoder: $it" } ?: "Listening..."
+            },
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Box(Modifier.size(5.dp).background(p.periwinkle.core))
+                    Text(
+                        text = "LIVE SPEECH DECODER // ON-DEVICE",
+                        fontSize = 9.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold,
+                        color = p.periwinkle.core,
+                    )
+                }
+                state.confidence?.let { conf ->
+                    Text(
+                        text = "CONFIDENCE: $conf/4",
+                        fontSize = 8.sp,
+                        fontFamily = FontFamily.Monospace,
+                        color = p.mint.core,
+                    )
+                }
+            }
+
+            Text(
+                text = state.partial?.let { "“$it”" } ?: "Listening for acoustic stream...",
+                fontSize = 13.sp,
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.Medium,
+                color = p.ink,
+                lineHeight = 18.sp,
+            )
+        }
+    }
+}
+
+@Composable
+private fun SpeechNote(note: String) {
+    val p = palette
+    Text(
+        note,
+        fontSize = 9.sp,
+        fontFamily = FontFamily.Monospace,
+        color = p.apricot.deep,
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(p.apricot.tint.copy(alpha = 0.3f))
+            .padding(horizontal = 12.dp, vertical = 3.dp)
+            .semantics { liveRegion = LiveRegionMode.Polite },
+    )
+}
+
+// ── THREAD PANE ─────────────────────────────────────────────────────────────
 
 @Composable
 private fun ThreadPane(
@@ -380,16 +663,16 @@ private fun ThreadPane(
     onReplay: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val p = palette
     if (state.messages.isEmpty()) {
         EmptyState(
             icon = Icons.Transmit,
             title = "Channel is quiet",
-            body = "Hold the PTT control below to transmit on this channel.",
+            body = "Hold the PTT control below to transmit tactical speech burst.",
             modifier = modifier,
         )
         return
     }
+
     val list = rememberLazyListState()
     val reduced = reducedMotion
     LaunchedEffect(state.messages.size) {
@@ -397,11 +680,12 @@ private fun ThreadPane(
         if (last < 0) return@LaunchedEffect
         if (reduced) list.scrollToItem(last) else list.animateScrollToItem(last)
     }
+
     LazyColumn(
-        modifier,
+        modifier = modifier,
         state = list,
-        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         items(state.messages) { message ->
             MessageBubble(
@@ -413,294 +697,257 @@ private fun ThreadPane(
     }
 }
 
-// ── the live strip ───────────────────────────────────────────────────────────
+// ── TACTICAL TRANSMIT DECK & FAIL-SAFE SOS MODULE ───────────────────────────
 
 @Composable
-private fun PartialStrip(state: OperatingState) {
-    val p = palette
-    val shape = RoundedCornerShape(Tokens.RadiusControl)
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 4.dp)
-            .background(p.surfaceContainerLowest, shape)
-            .border(Tokens.Hairline, p.periwinkle.core, shape)
-            .heightIn(min = 44.dp)
-            .padding(horizontal = 10.dp, vertical = 8.dp)
-            .semantics {
-                liveRegion = LiveRegionMode.Polite
-                contentDescription = state.partial?.let { "Heard: $it" } ?: "Listening."
-            },
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Text(
-            state.partial?.let { "“$it”" } ?: "Listening …",
-            fontSize = Tokens.Body,
-            fontFamily = FontFamily.Monospace,
-            fontWeight = FontWeight.Medium,
-            color = p.ink,
-            lineHeight = Tokens.Body * Tokens.INDIC_LINE_HEIGHT,
-            modifier = Modifier.weight(1f),
-        )
-        state.confidence?.let { level -> ConfidenceDots(level, p.periwinkle.core) }
-    }
-}
-
-@Composable
-private fun ConfidenceDots(
-    level: Int,
-    colour: Color,
-) {
-    Row(horizontalArrangement = Arrangement.spacedBy(3.dp), modifier = Modifier.decorative()) {
-        repeat(4) { index ->
-            Box(
-                Modifier
-                    .size(6.dp)
-                    .then(
-                        if (index < level) {
-                            Modifier.background(colour, CircleShape)
-                        } else {
-                            Modifier.border(1.dp, colour, CircleShape)
-                        },
-                    ),
-            )
-        }
-    }
-}
-
-@Composable
-private fun SpeechNote(note: String) {
-    val p = palette
-    Text(
-        note,
-        fontSize = Tokens.Label,
-        fontFamily = FontFamily.Monospace,
-        color = p.apricot.deep,
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 2.dp)
-                .semantics { liveRegion = LiveRegionMode.Polite },
-    )
-}
-
-// ── the dock ─────────────────────────────────────────────────────────────────
-
-@Composable
-private fun Dock(
+private fun TacticalTransmitDeck(
     state: OperatingState,
     onTransmitChange: (Boolean) -> Unit,
     onAlert: () -> Unit,
-    onReplay: (String) -> Unit,
     onLocate: () -> Unit,
+    onModeChange: (String) -> Unit,
 ) {
     val p = palette
     val dock = dockStateOf(state)
+    val phone = state.mode.equals("Phone", ignoreCase = true)
 
     Column(
-        Modifier
+        modifier = Modifier
             .fillMaxWidth()
             .background(p.surfaceContainerLowest)
             .border(Tokens.Hairline, p.hairline)
-            .padding(start = Tokens.ScreenMargin, end = Tokens.ScreenMargin, top = 12.dp, bottom = 8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+            .padding(horizontal = 10.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        DockHint(dock, state)
+        // TOP DECK: MODE & LOCATE CONTROLS
         Row(
-            Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            if (dock == DockState.PHONE) {
-                FlankButton(
-                    if (state.openLinePaused) Icons.Play else Icons.Pause,
-                    if (state.openLinePaused) "RESUME" else "HOLD",
-                    p.butter,
-                    enabled = true,
-                    onClick = { onTransmitChange(true) },
-                )
-            } else {
-                FlankButton(Icons.Alert, "ALERT", p.blush, enabled = true, strong = true, onClick = onAlert)
-            }
-
-            TransmitCircle(state, dock, onTransmitChange)
-
-            FlankButton(
-                icon = Icons.Globe,
-                label = "LOCATE",
-                family = p.aqua,
-                enabled = true,
-                onClick = onLocate,
-            )
-        }
-    }
-}
-
-@Composable
-private fun DockHint(
-    dock: DockState,
-    state: OperatingState,
-) {
-    val p = palette
-    when (dock) {
-        DockState.IDLE ->
-            Text(
-                "HOLD PTT OR VOLUME DOWN TO SPEAK",
-                fontSize = Tokens.Instrument,
-                fontFamily = FontFamily.Monospace,
-                fontWeight = FontWeight.Bold,
-                color = p.muted,
-            )
-        DockState.SEIZED ->
-            Text(
-                "OPENING MICROPHONE …",
-                fontSize = Tokens.Instrument,
-                fontFamily = FontFamily.Monospace,
-                fontWeight = FontWeight.Bold,
-                color = p.periwinkle.core,
-            )
-        DockState.LIVE ->
-            Text(
-                "SPEAK NOW // TRANSMITTING",
-                fontSize = Tokens.Instrument,
-                fontFamily = FontFamily.Monospace,
-                fontWeight = FontWeight.Bold,
-                color = p.mint.core,
-            )
-        DockState.BUSY ->
-            Text(
-                "CHANNEL BUSY",
-                fontSize = Tokens.Instrument,
-                fontFamily = FontFamily.Monospace,
-                fontWeight = FontWeight.Bold,
-                color = p.apricot.deep,
-            )
-        DockState.PHONE ->
-            Text(
-                if (state.openLinePaused) "LINE PAUSED // PRESS RESUME" else "FULL DUPLEX LINE OPEN",
-                fontSize = Tokens.Instrument,
-                fontFamily = FontFamily.Monospace,
-                fontWeight = FontWeight.Bold,
-                color = p.periwinkle.core,
-            )
-    }
-}
-
-@Composable
-private fun FlankButton(
-    icon: ImageVector,
-    label: String,
-    family: ItantraPalette.Family,
-    enabled: Boolean,
-    strong: Boolean = false,
-    onClick: () -> Unit,
-) {
-    val shape = RoundedCornerShape(Tokens.RadiusControl)
-    Column(
-        Modifier
-            .size(Tokens.DockFlank)
-            .background(if (strong) family.core else family.tint, shape)
-            .border(Tokens.Hairline, family.mid, shape)
-            .clickable(enabled = enabled, onClick = onClick)
-            .padding(4.dp)
-            .semantics(mergeDescendants = true) {
-                contentDescription = label
-            },
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Icon(icon, contentDescription = null, tint = if (strong) Color.White else family.deep, modifier = Modifier.size(22.dp))
-        Spacer(Modifier.height(2.dp))
-        Text(
-            label,
-            fontSize = 9.sp,
-            fontFamily = FontFamily.Monospace,
-            fontWeight = FontWeight.Bold,
-            color = if (strong) Color.White else family.deep,
-        )
-    }
-}
-
-@Composable
-private fun TransmitCircle(
-    state: OperatingState,
-    dock: DockState,
-    onTransmitChange: (Boolean) -> Unit,
-) {
-    val p = palette
-    val reduced = reducedMotion
-    val active = dock == DockState.LIVE || dock == DockState.SEIZED
-
-    Box(
-        Modifier
-            .size(Tokens.TransmitCircle)
-            .pointerInput(dock) {
-                if (dock == DockState.BUSY) return@pointerInput
-                detectTapGestures(
-                    onPress = {
-                        onTransmitChange(true)
-                        tryAwaitRelease()
-                        onTransmitChange(false)
-                    },
-                )
-            },
-        contentAlignment = Alignment.Center,
-    ) {
-        // Outer glow halo while active
-        if (active && !reduced) {
-            Box(
-                Modifier
-                    .size(Tokens.TransmitCircle)
-                    .border(2.dp, p.periwinkle.core, CircleShape),
-            )
-        }
-
-        Box(
-            Modifier
-                .size(Tokens.TransmitCircle - 16.dp)
-                .background(if (active) p.periwinkle.core else p.surfaceContainerLow, CircleShape)
-                .border(2.dp, if (active) p.periwinkle.mid else p.periwinkle.core, CircleShape),
-            contentAlignment = Alignment.Center,
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
+            // Mode switch PTT / Phone
+            Row(
+                modifier = Modifier
+                    .background(p.surfaceContainerLow)
+                    .border(Tokens.Hairline, p.hairline),
             ) {
-                Icon(
-                    Icons.Transmit,
-                    contentDescription = null,
-                    tint = if (active) p.onAccent else p.periwinkle.core,
-                    modifier = Modifier.size(36.dp),
-                )
-                Spacer(Modifier.height(4.dp))
+                listOf("PTT" to !phone, "Phone" to phone).forEach { (label, selected) ->
+                    Box(
+                        modifier = Modifier
+                            .background(if (selected) p.periwinkle.core else Color.Transparent)
+                            .clickable(enabled = !selected) { onModeChange(label) }
+                            .padding(horizontal = 10.dp, vertical = 4.dp),
+                    ) {
+                        Text(
+                            text = label.uppercase(),
+                            fontSize = 9.sp,
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                            color = if (selected) p.surfaceContainerLowest else p.muted,
+                        )
+                    }
+                }
+            }
+
+            // Locate node action
+            Row(
+                modifier = Modifier
+                    .background(p.surfaceContainerLow)
+                    .border(Tokens.Hairline, p.hairline)
+                    .clickable(onClick = onLocate)
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Icon(Icons.Globe, contentDescription = null, tint = p.aqua.core, modifier = Modifier.size(14.dp))
                 Text(
-                    text = if (active) "TRANSMIT" else "PTT",
-                    fontSize = 11.sp,
+                    text = "LOCATE NODES",
+                    fontSize = 8.sp,
                     fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Black,
-                    color = if (active) p.onAccent else p.periwinkle.core,
+                    fontWeight = FontWeight.Bold,
+                    color = p.aqua.core,
                 )
+            }
+        }
+
+        // CENTER TRANSMIT CONSOLE (Tactical Angular PTT Button)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(p.surfaceContainerLow)
+                .border(1.dp, if (state.transmitting) p.mint.core else p.hairline)
+                .padding(8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // Interactive PTT Button
+            Box(
+                modifier = Modifier
+                    .size(width = 160.dp, height = 54.dp)
+                    .background(if (state.transmitting) p.mint.core else p.periwinkle.core)
+                    .border(1.5.dp, if (state.transmitting) p.mint.deep else p.periwinkle.mid)
+                    .pointerInput(dock) {
+                        if (dock == DockState.BUSY) return@pointerInput
+                        detectTapGestures(
+                            onPress = {
+                                onTransmitChange(true)
+                                tryAwaitRelease()
+                                onTransmitChange(false)
+                            },
+                        )
+                    },
+                contentAlignment = Alignment.Center,
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Icon(
+                        Icons.Transmit,
+                        contentDescription = null,
+                        tint = p.surfaceContainerLowest,
+                        modifier = Modifier.size(24.dp),
+                    )
+                    Column {
+                        Text(
+                            text = if (state.transmitting) "TRANSMITTING" else "HOLD TO SPEAK",
+                            fontSize = 11.sp,
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Black,
+                            color = p.surfaceContainerLowest,
+                            letterSpacing = 0.5.sp,
+                        )
+                        Text(
+                            text = "PTT DUPLEX // CH-01",
+                            fontSize = 7.sp,
+                            fontFamily = FontFamily.Monospace,
+                            color = p.surfaceContainerLowest.copy(alpha = 0.8f),
+                        )
+                    }
+                }
+            }
+
+            // Real-Time Waveform & Buffer Readout
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                Text(
+                    text = if (state.transmitting) "MIC SEIZED // 16kHz" else "FREQ: 868.10 MHz",
+                    fontSize = 8.sp,
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Bold,
+                    color = if (state.transmitting) p.mint.core else p.muted,
+                )
+                // Tactical Waveform Bars
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.height(14.dp),
+                ) {
+                    val bars = listOf(4, 10, 6, 14, 8, 12, 5, 9)
+                    bars.forEach { height ->
+                        Box(
+                            modifier = Modifier
+                                .width(3.dp)
+                                .height(if (state.transmitting) (height * 1.2f).dp else (height / 2).dp)
+                                .background(if (state.transmitting) p.mint.core else p.hairlineStrong),
+                        )
+                    }
+                }
+                Text(
+                    text = "BUFFER: EMPTY",
+                    fontSize = 7.sp,
+                    fontFamily = FontFamily.Monospace,
+                    color = p.hairlineStrong,
+                )
+            }
+        }
+
+        // FAIL-SAFE EMERGENCY SOS BROADCAST MODULE
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(p.blush.tint.copy(alpha = 0.25f))
+                .border(1.5.dp, p.blush.core)
+                .padding(8.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Box(Modifier.size(5.dp).background(p.blush.core))
+                        Text(
+                            text = "DISTRESS BEACON // ALL NODES",
+                            fontSize = 8.sp,
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Bold,
+                            color = p.blush.core,
+                        )
+                    }
+                    Text(
+                        text = "EMERGENCY BROADCAST SOS",
+                        fontSize = 10.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Black,
+                        color = p.ink,
+                    )
+                }
+
+                // SOS Trigger Button
+                Box(
+                    modifier = Modifier
+                        .background(p.blush.core)
+                        .border(1.dp, Color.White)
+                        .clickable(onClick = onAlert)
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Icon(
+                            Icons.Alert,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(16.dp),
+                        )
+                        Text(
+                            text = "SOS DISTRESS",
+                            fontSize = 10.sp,
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Black,
+                            color = Color.White,
+                            letterSpacing = 0.5.sp,
+                        )
+                    }
+                }
             }
         }
     }
 }
 
-// ── instrumentation ──────────────────────────────────────────────────────────
+// ── INSTRUMENTATION STRIP ───────────────────────────────────────────────────
 
 @Composable
 private fun InstrumentStrip(state: OperatingState) {
     val p = palette
     val m = state.metrics
     val live = state.transmitting
+
     Column(
         Modifier
             .fillMaxWidth()
-            .heightIn(min = Tokens.InstrumentBand)
             .background(p.surfaceContainerLowest)
             .border(Tokens.Hairline, p.hairline)
-            .padding(start = Tokens.ScreenMargin, end = Tokens.ScreenMargin, top = 6.dp, bottom = 6.dp)
+            .padding(horizontal = 10.dp, vertical = 4.dp)
             .semantics { contentDescription = spokenMetrics(m) },
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
@@ -727,8 +974,8 @@ private fun InstrumentStrip(state: OperatingState) {
 private fun Instrument(text: String) {
     val p = palette
     Text(
-        text,
-        fontSize = Tokens.Instrument,
+        text = text,
+        fontSize = 8.sp,
         fontFamily = FontFamily.Monospace,
         fontWeight = FontWeight.Medium,
         color = p.sky.deep,

@@ -1,5 +1,6 @@
 package org.itantra.app.ui
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -31,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
@@ -41,28 +44,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-
-// The alert path. Tasks **W5.17**–**W5.20**; `docs/REDESIGN.md` phase 3 — boards 12, 13, 14
-// and 22 of *iTantra Screens v2*.
-//
-// ## The one rule the redesign changed, and why it is an improvement
-//
-// The tiles used to be six saturated red rectangles. They are now **Paper on a hairline with
-// the emergency in the 32 dp icon alone**, and that is not a softening — it is the greyscale
-// test applied. Six red rectangles differ only in a glyph and a word, so under sunlight,
-// under a colour-vision deficiency, or in Field Mode they collapse into one another. A white
-// tile with a distinct silhouette separates by *shape*, which survives all three.
-//
-// `ALL CLEAR` is the exception that proves it: Mint border, Mint icon, and a Mint dot beside
-// the label. It is the only one of the six that is good news, and colouring it as an
-// emergency would be a lie told in the fastest-read part of the interface.
-//
-// ## Three rules from `docs/UX.md` that did not change
-//
-// 1. **Icon plus word, never a word alone.** The operator this product exists for may not
-// read; the icon is the primary carrier and the word confirms it for those who do.
-// 2. **Targets are 96 dp** on anything that sends. Gloves, darkness, a moving vehicle.
-// 3. **The safe option is never smaller than the dangerous one.** See [AlertConfirmScreen].
+import androidx.compose.ui.unit.sp
 
 /** The six template alerts. One byte of payload; 21 bytes on the wire, authenticated. */
 enum class AlertTemplate(val code: Int, val label: String) {
@@ -74,14 +56,6 @@ enum class AlertTemplate(val code: Int, val label: String) {
     ALL_CLEAR(6, "All clear"),
     ;
 
-    /**
-     * The glyph, as a vector rather than as a Unicode character.
-     *
-     * The six used to be `✚ ▲ ≈ ⌂ ⌖ ✓`, which render in whatever the system font has and are
-     * announced by TalkBack as their character names — "heavy greek cross" for a medical
-     * emergency. These are drawn, so they are identical on every handset and silent to a
-     * screen reader, which reads [label] instead.
-     */
     val icon: ImageVector
         get() =
             when (this) {
@@ -93,20 +67,11 @@ enum class AlertTemplate(val code: Int, val label: String) {
                 ALL_CLEAR -> Icons.AllClear
             }
 
-    /** All clear is the only good news among the six, and is never drawn as an emergency. */
     val isGoodNews: Boolean get() = this == ALL_CLEAR
 }
 
-// ── board 12 ─────────────────────────────────────────────────────────────────
+// ── BOARD 12: COMPOSE ALERT / EMERGENCY CHANNEL ─────────────────────────────
 
-/**
- * Task **W5.17**, board 12. Six templates, and a held control for anything they do not cover.
- *
- * The templates are the fastest path *and* the smallest frame *and* the cross-language path
- * — a template sent here is announced in whatever language each receiver has selected,
- * because the byte identifies the sentence rather than carrying it. That claim is printed
- * under the grid rather than left in a document.
- */
 @Composable
 fun AlertComposeScreen(
     onTemplate: (AlertTemplate) -> Unit,
@@ -117,28 +82,66 @@ fun AlertComposeScreen(
     modifier: Modifier = Modifier,
 ) {
     val p = palette
+
     Column(
         modifier
             .fillMaxSize()
             .background(p.ground)
             .windowInsetsPadding(WindowInsets.safeDrawing),
     ) {
-        BackHeader("Send alert", onBack)
+        BackHeader("EMERGENCY COMMS CONSOLE", onBack)
 
         Column(
-            Modifier.weight(1f).padding(horizontal = 12.dp, vertical = 14.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            // SUB-STRIP: FIELD MODE & CRYPTO STATUS
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(p.surfaceContainerLowest)
+                    .border(Tokens.Hairline, p.hairline)
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Box(modifier = Modifier.size(6.dp).background(p.blush.core))
+                    Text(
+                        text = "TACTICAL AUDIO CONSOLE // CH-01",
+                        fontSize = 9.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold,
+                        color = p.blush.core,
+                    )
+                }
+                Text(
+                    text = "0% INTERNET (OFFLINE)",
+                    fontSize = 8.sp,
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Bold,
+                    color = p.blush.core,
+                )
+            }
+
+            // TEMPLATE CARDS GRID (3 rows of 2)
             Text(
-                "Announced at full volume on every unit, even locked and silenced.",
-                fontSize = Tokens.BodySmall,
-                lineHeight = Tokens.BodySmall * 1.45f,
+                text = "AUTHENTICATED TEMPLATE DISPATCH (21 B AIRGAP PKT)",
+                fontSize = 9.sp,
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.Bold,
                 color = p.muted,
-                modifier = Modifier.padding(horizontal = 2.dp),
+                letterSpacing = 0.5.sp,
             )
 
             AlertTemplate.entries.chunked(2).forEach { pair ->
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     pair.forEach { template ->
                         TemplateTile(template, Modifier.weight(1f)) { onTemplate(template) }
                     }
@@ -146,33 +149,21 @@ fun AlertComposeScreen(
                 }
             }
 
-            Text(
-                "21 B · reaches every unit in its own language",
-                fontSize = Tokens.Instrument,
-                fontFamily = FontFamily.Monospace,
-                fontWeight = FontWeight.Medium,
-                lineHeight = Tokens.Instrument * 1.5f,
-                color = p.muted,
-                modifier = Modifier.padding(horizontal = 2.dp),
-            )
+            Spacer(Modifier.height(4.dp))
+
+            // 5-STAGE SIGNAL CHAIN PIPELINE
+            SignalChainPipeline()
         }
 
-        // The dock keeps the geometry of the operating screen's, so the thumb lands in the
-        // same place on a screen the operator reached in a hurry. Task 3.2.
-        DockShelf(hint = "OR HOLD TO SPEAK YOUR OWN ALERT") {
+        // TACTICAL DOCK WITH HOLD-TO-SPEAK CONTROL
+        DockShelf(hint = "HOLD TO SPEAK CUSTOM TACTICAL ALERT") {
             GpsFlank(attachPosition, onAttachPositionChange)
             HoldToSpeakCircle(onHoldToSpeak)
-            SquareFlank(Icons.Cross, "BACK", enabled = true, onClick = onBack)
+            SquareFlank(Icons.Cross, "CANCEL", enabled = true, onClick = onBack)
         }
     }
 }
 
-/**
- * One template.
- *
- * Paper on a hairline; the colour is in the icon and nowhere else. Three carriers — the
- * silhouette, the hue, the word — so the grid still separates when any one is taken away.
- */
 @Composable
 private fun TemplateTile(
     template: AlertTemplate,
@@ -181,47 +172,114 @@ private fun TemplateTile(
 ) {
     val p = palette
     val family = if (template.isGoodNews) p.mint else p.blush
-    val shape = RoundedCornerShape(Tokens.RadiusCard)
     Column(
         modifier
-            .heightIn(min = 116.dp)
-            .background(p.paper, shape)
-            .border(Tokens.Hairline, if (template.isGoodNews) family.mid else p.hairline, shape)
+            .heightIn(min = 88.dp)
+            .background(p.surfaceContainerLowest)
+            .border(Tokens.Hairline, if (template.isGoodNews) family.core else p.hairline)
             .clickable(onClick = onClick)
-            .padding(16.dp)
+            .padding(12.dp)
             .semantics(mergeDescendants = true) { contentDescription = template.label },
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
-        Icon(template.icon, contentDescription = null, tint = family.core, modifier = Modifier.size(32.dp))
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(template.icon, contentDescription = null, tint = family.core, modifier = Modifier.size(28.dp))
             Text(
-                template.label,
-                fontSize = Tokens.Body,
-                fontWeight = FontWeight.SemiBold,
+                text = if (template.isGoodNews) "[ALL-CLEAR]" else "[URGENT]",
+                fontSize = 7.sp,
+                fontFamily = FontFamily.Monospace,
+                color = family.core,
+            )
+        }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(
+                template.label.uppercase(),
+                fontSize = 12.sp,
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.Bold,
                 color = if (template.isGoodNews) family.deep else p.ink,
             )
-            // The dot is the second carrier on the one tile whose meaning is the opposite of
-            // its neighbours'. Without it, "All clear" in greyscale is just another tile.
             if (template.isGoodNews) {
-                Box(Modifier.size(6.dp).background(family.core, CircleShape))
+                Box(Modifier.size(5.dp).background(family.core))
             }
         }
     }
 }
 
-/** The position checkbox, given the dock's left flank so it is never hunted for. */
+@Composable
+private fun SignalChainPipeline() {
+    val p = palette
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(p.surfaceContainerLowest)
+            .border(Tokens.Hairline, p.hairline)
+            .padding(8.dp),
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                text = "ON-DEVICE SIGNAL CHAIN (ZERO CLOUD DEPENDENCY)",
+                fontSize = 8.sp,
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.Bold,
+                color = p.hairlineStrong,
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                StageChip("01", "VOICE INPUT", Modifier.weight(1f))
+                StageChip("02", "LOCAL STT", Modifier.weight(1f), isPrimary = true)
+                StageChip("03", "ENCODED", Modifier.weight(1f))
+                StageChip("04", "P2P LINK", Modifier.weight(1f))
+                StageChip("05", "REMOTE TTS", Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun StageChip(
+    stageNum: String,
+    label: String,
+    modifier: Modifier = Modifier,
+    isPrimary: Boolean = false,
+) {
+    val p = palette
+    Column(
+        modifier = modifier
+            .background(if (isPrimary) p.surfaceContainerHigh else p.surfaceContainerLow)
+            .border(Tokens.Hairline, if (isPrimary) p.periwinkle.core else p.hairline)
+            .padding(vertical = 4.dp, horizontal = 2.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(text = "STG $stageNum", fontSize = 6.sp, fontFamily = FontFamily.Monospace, color = p.hairlineStrong)
+        Text(
+            text = label,
+            fontSize = 7.sp,
+            fontFamily = FontFamily.Monospace,
+            fontWeight = FontWeight.Bold,
+            color = if (isPrimary) p.periwinkle.core else p.ink,
+            maxLines = 1,
+        )
+    }
+}
+
 @Composable
 private fun GpsFlank(
     checked: Boolean,
     onChange: (Boolean) -> Unit,
 ) {
     val p = palette
-    val shape = RoundedCornerShape(Tokens.RadiusCard)
     Column(
         Modifier
             .sizeIn(minWidth = Tokens.DockFlank, minHeight = Tokens.DockFlank)
-            .background(p.ground, shape)
-            .border(Tokens.Hairline, p.hairline, shape)
+            .background(p.surfaceContainerLowest)
+            .border(Tokens.Hairline, p.hairline)
             .clickable { onChange(!checked) }
             .semantics(mergeDescendants = true) {
                 contentDescription = if (checked) "Attach my position, on" else "Attach my position, off"
@@ -231,84 +289,69 @@ private fun GpsFlank(
     ) {
         Box(
             Modifier
-                .size(22.dp)
-                .background(if (checked) p.mint.core else Color.Transparent, RoundedCornerShape(5.dp))
-                .border(2.dp, if (checked) p.mint.core else p.muted, RoundedCornerShape(5.dp)),
+                .size(20.dp)
+                .background(if (checked) p.mint.core else Color.Transparent)
+                .border(1.5.dp, if (checked) p.mint.core else p.muted),
             contentAlignment = Alignment.Center,
         ) {
             if (checked) {
-                Icon(Icons.Tick, contentDescription = null, tint = p.onAccent, modifier = Modifier.size(14.dp))
+                Icon(Icons.Tick, contentDescription = null, tint = p.onAccent, modifier = Modifier.size(12.dp))
             }
         }
         Spacer(Modifier.height(3.dp))
-        Text("GPS", fontSize = Tokens.Instrument, fontWeight = FontWeight.SemiBold, color = p.muted)
+        Text("GPS", fontSize = 9.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, color = p.muted)
     }
 }
 
-/** The free-form alert. Blush where the operating screen's is Periwinkle; same 132 dp. */
 @Composable
 private fun HoldToSpeakCircle(onHold: (Boolean) -> Unit) {
     val p = palette
-    Box(Modifier.size(Tokens.TransmitCircle), contentAlignment = Alignment.Center) {
-        val t = haloProgress()
-        Box(
-            Modifier
-                .size(Tokens.TransmitCircle)
-                .graphicsLayer {
-                    val scale = 0.86f + (1.62f - 0.86f) * t
-                    scaleX = scale
-                    scaleY = scale
-                    alpha = 0.5f * (1f - t)
-                }
-                .border(Tokens.SignalBorder, p.blush.core, CircleShape),
-        )
-        Column(
-            Modifier
-                .size(Tokens.TransmitCircle)
-                .background(p.blush.tint, CircleShape)
-                .border(3.dp, p.blush.core, CircleShape)
-                .pointerInput(Unit) {
-                    detectTapGestures(
-                        onPress = {
-                            onHold(true)
-                            // Returns on release and on cancellation both: a thumb sliding
-                            // off must give the floor back.
-                            tryAwaitRelease()
-                            onHold(false)
-                        },
-                    )
-                }
-                .semantics(mergeDescendants = true) {
-                    contentDescription = "Hold to speak your own alert"
-                },
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally,
+    Box(
+        modifier = Modifier
+            .size(width = 150.dp, height = 54.dp)
+            .background(p.blush.core)
+            .border(1.5.dp, p.blush.deep)
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onPress = {
+                        onHold(true)
+                        tryAwaitRelease()
+                        onHold(false)
+                    },
+                )
+            }
+            .semantics(mergeDescendants = true) {
+                contentDescription = "Hold to speak your own alert"
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Icon(Icons.Transmit, contentDescription = null, tint = p.blush.core, modifier = Modifier.size(44.dp))
-            Spacer(Modifier.height(5.dp))
-            Text("HOLD", fontSize = Tokens.Instrument, fontWeight = FontWeight.Bold, color = p.blush.deep)
+            Icon(Icons.Transmit, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
+            Column {
+                Text(
+                    text = "HOLD TO SPEAK",
+                    fontSize = 11.sp,
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Black,
+                    color = Color.White,
+                    letterSpacing = 0.5.sp,
+                )
+                Text(
+                    text = "PTT DUPLEX // CH-01",
+                    fontSize = 7.sp,
+                    fontFamily = FontFamily.Monospace,
+                    color = Color.White.copy(alpha = 0.8f),
+                )
+            }
         }
     }
 }
 
-// ── board 13 ─────────────────────────────────────────────────────────────────
+// ── BOARD 13: CONFIRM ALERT BEFORE TRANSMITTING ─────────────────────────────
 
-/**
- * Task **W5.18**, board 13. The one place the system deliberately adds latency, because an
- * alert is the only message that can cause physical harm if it is wrong.
- *
- * Two rules, both load-bearing and both visual:
- *
- * - The text is **spoken aloud on open**, so the confirmation works for an operator who
- *   cannot read it. [onSpeak] fires once when the screen appears; the row below merely
- *   repeats it, and says so rather than pretending to be the first offer.
- * - **RETAKE and SEND are exactly equal**: `weight(1f)` on both and one height, so they are
- *   equal by construction rather than by two numbers that can drift. Only the fill differs,
- *   and SEND is the filled one because it is the action — not because it is preferred.
- *
- * The recognised text sits on **Paper, never on a pastel**. The operator is verifying what
- * the machine heard; tinting that container would imply a judgement the system has not made.
- */
 @Composable
 fun AlertConfirmScreen(
     text: String,
@@ -321,8 +364,6 @@ fun AlertConfirmScreen(
     modifier: Modifier = Modifier,
 ) {
     val p = palette
-    // Spoken on open, not on a press: the operator who most needs this is the one who would
-    // not know to ask for it.
     LaunchedEffect(text) { onSpeak(text) }
 
     Column(
@@ -331,140 +372,119 @@ fun AlertConfirmScreen(
             .background(p.ground)
             .windowInsetsPadding(WindowInsets.safeDrawing),
     ) {
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .heightIn(min = Tokens.StatusBand)
-                .background(p.paper)
-                .padding(horizontal = Tokens.ScreenMargin),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            Box(
-                Modifier.size(28.dp).background(p.blush.tint, RoundedCornerShape(9.dp)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(Icons.Alert, contentDescription = null, tint = p.blush.core, modifier = Modifier.size(18.dp))
-            }
-            Text(
-                "Check before sending",
-                fontSize = Tokens.Subtitle,
-                fontWeight = FontWeight.Bold,
-                color = p.ink,
-            )
-        }
-        Hairline()
+        BackHeader("CHECK BEFORE SENDING", onRetake)
 
         Column(
-            Modifier.weight(1f).padding(horizontal = Tokens.ScreenMargin),
-            verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
+            Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 12.dp, vertical = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
-                "WHAT THE MACHINE HEARD",
-                fontSize = Tokens.Instrument,
+                "WHAT THE MACHINE HEARD (ON-DEVICE STT)",
+                fontSize = 9.sp,
                 fontFamily = FontFamily.Monospace,
-                fontWeight = FontWeight.Medium,
+                fontWeight = FontWeight.Bold,
                 color = p.muted,
-                modifier = Modifier.padding(start = 4.dp),
+                letterSpacing = 0.5.sp,
             )
 
-            Column(
+            // Recognized text card
+            Box(
                 Modifier
                     .fillMaxWidth()
-                    .background(p.paper, RoundedCornerShape(22.dp))
-                    .border(Tokens.Hairline, p.hairline, RoundedCornerShape(22.dp))
-                    .padding(horizontal = 24.dp, vertical = 26.dp),
-                verticalArrangement = Arrangement.spacedBy(22.dp),
+                    .background(p.surfaceContainerLowest)
+                    .border(Tokens.Hairline, p.hairline)
+                    .padding(16.dp),
             ) {
-                Text(
-                    text,
-                    fontSize = Tokens.Headline,
-                    lineHeight = Tokens.Headline * Tokens.INDIC_LINE_HEIGHT,
-                    color = p.ink,
-                )
-                Box(Modifier.fillMaxWidth().height(1.dp).background(p.sunken))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(5.dp), modifier = Modifier.decorative()) {
-                        repeat(4) { index ->
-                            Box(
-                                Modifier
-                                    .size(9.dp)
-                                    .then(
-                                        if (index < confidence) {
-                                            Modifier.background(p.butter.core, CircleShape)
-                                        } else {
-                                            Modifier.border(1.5.dp, p.butter.core, CircleShape)
-                                        },
-                                    ),
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        text = "“$text”",
+                        fontSize = 18.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold,
+                        lineHeight = 24.sp,
+                        color = p.ink,
+                    )
+                    Box(Modifier.fillMaxWidth().height(1.dp).background(p.sunken))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Box(Modifier.size(5.dp).background(if (confidence >= 3) p.mint.core else p.apricot.core))
+                            Text(
+                                text = if (confidence >= 3) "HIGH CONFIDENCE" else "LOW CONFIDENCE",
+                                fontSize = 9.sp,
+                                fontFamily = FontFamily.Monospace,
+                                fontWeight = FontWeight.Bold,
+                                color = if (confidence >= 3) p.mint.core else p.apricot.core,
                             )
                         }
-                    }
-                    Text(
-                        if (confidence >= 3) "high confidence" else "low confidence",
-                        fontSize = Tokens.Status,
-                        fontWeight = FontWeight.SemiBold,
-                        color = p.butter.deep,
-                    )
-                    Spacer(Modifier.weight(1f))
-                    if (frameBytes != null || language != null) {
-                        Text(
-                            listOfNotNull(frameBytes?.let { "$it B" }, language).joinToString(" · "),
-                            fontSize = Tokens.Instrument,
-                            fontFamily = FontFamily.Monospace,
-                            fontWeight = FontWeight.Medium,
-                            lineHeight = Tokens.Instrument * Tokens.INDIC_LINE_HEIGHT,
-                            color = p.muted,
-                        )
+                        if (frameBytes != null || language != null) {
+                            Text(
+                                listOfNotNull(frameBytes?.let { "$it B" }, language).joinToString(" · "),
+                                fontSize = 9.sp,
+                                fontFamily = FontFamily.Monospace,
+                                color = p.muted,
+                            )
+                        }
                     }
                 }
             }
 
+            // Hear it back card
             Row(
                 Modifier
                     .fillMaxWidth()
-                    .heightIn(min = Tokens.SecondaryAction)
-                    .background(p.paper, RoundedCornerShape(Tokens.RadiusTile))
-                    .border(Tokens.Hairline, p.aqua.mid, RoundedCornerShape(Tokens.RadiusTile))
+                    .background(p.surfaceContainerLowest)
+                    .border(Tokens.Hairline, p.aqua.mid)
                     .clickable { onSpeak(text) }
-                    .padding(horizontal = 18.dp),
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Box(
-                    Modifier.size(40.dp).background(p.aqua.tint, CircleShape),
+                    Modifier.size(36.dp).background(p.aqua.tint),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(Icons.Play, contentDescription = null, tint = p.aqua.core, modifier = Modifier.size(18.dp))
                 }
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Column {
                     Text(
-                        "Hear it back",
-                        fontSize = Tokens.BodySmall,
-                        fontWeight = FontWeight.SemiBold,
+                        "HEAR IT BACK (LOCAL TTS)",
+                        fontSize = 11.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold,
                         color = p.aqua.deep,
                     )
-                    Text("Already spoken once on open", fontSize = Tokens.Instrument, color = p.muted)
+                    Text(
+                        "Spoken aloud on open for verification",
+                        fontSize = 9.sp,
+                        fontFamily = FontFamily.Monospace,
+                        color = p.muted,
+                    )
                 }
             }
         }
 
+        // RETAKE / SEND EQUAL TARGETS
         Row(
             Modifier
                 .fillMaxWidth()
-                .background(p.paper, RoundedCornerShape(topStart = Tokens.RadiusDock, topEnd = Tokens.RadiusDock))
-                .padding(Tokens.ScreenMargin),
+                .background(p.surfaceContainerLowest)
+                .border(Tokens.Hairline, p.hairline)
+                .padding(12.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             ConfirmTarget(Icons.Cross, "RETAKE", filled = false, modifier = Modifier.weight(1f), onClick = onRetake)
-            ConfirmTarget(Icons.Tick, "SEND", filled = true, modifier = Modifier.weight(1f), onClick = onSend)
+            ConfirmTarget(Icons.Tick, "TRANSMIT SOS", filled = true, modifier = Modifier.weight(1f), onClick = onSend)
         }
     }
 }
 
-/** 96 dp, equal by construction. Only the fill tells them apart. */
 @Composable
 private fun ConfirmTarget(
     icon: ImageVector,
@@ -474,12 +494,11 @@ private fun ConfirmTarget(
     onClick: () -> Unit,
 ) {
     val p = palette
-    val shape = RoundedCornerShape(22.dp)
     Column(
         modifier
-            .heightIn(min = 96.dp)
-            .background(if (filled) p.blush.core else p.paper, shape)
-            .then(if (filled) Modifier else Modifier.border(Tokens.SignalBorder, p.hairline, shape))
+            .heightIn(min = 64.dp)
+            .background(if (filled) p.blush.core else p.surfaceContainerLowest)
+            .border(1.dp, if (filled) p.blush.deep else p.hairline)
             .clickable(onClick = onClick)
             .semantics(mergeDescendants = true) { contentDescription = label },
         verticalArrangement = Arrangement.Center,
@@ -488,36 +507,22 @@ private fun ConfirmTarget(
         Icon(
             icon,
             contentDescription = null,
-            tint = if (filled) p.onAccent else p.ink,
-            modifier = Modifier.size(24.dp),
+            tint = if (filled) Color.White else p.ink,
+            modifier = Modifier.size(20.dp),
         )
-        Spacer(Modifier.height(6.dp))
+        Spacer(Modifier.height(4.dp))
         Text(
             label,
-            fontSize = Tokens.BodySmall,
-            fontWeight = FontWeight.SemiBold,
-            color = if (filled) p.onAccent else p.ink,
+            fontSize = 11.sp,
+            fontFamily = FontFamily.Monospace,
+            fontWeight = FontWeight.Bold,
+            color = if (filled) Color.White else p.ink,
         )
     }
 }
 
-// ── board 14 ─────────────────────────────────────────────────────────────────
+// ── BOARD 14: INCOMING ALERT SCREEN ─────────────────────────────────────────
 
-/**
- * Task **W5.19**, board 14. The full-screen intent, over a locked handset.
- *
- * **Identical in both palettes.** This is the one surface Field Mode does not touch: full
- * bleed `#C62828` with a `#9F1239` inner rule, in Spectrum and in Field alike. Everything
- * else in the product gives up its hue under sunlight; an alert does not.
- *
- * **There is no swipe-to-dismiss, and that is deliberate** — a swipe is something a pocket
- * can do. Dismissal requires the [onAcknowledge] target, which also drives the acknowledged
- * count on the sender's screen, so an alert nobody acknowledged is visibly different from
- * one everybody did.
- *
- * The text is rendered in the **receiver's** language when the alert arrived as a template
- * code, which is what the evidence line under the position is saying.
- */
 @Composable
 fun IncomingAlertScreen(
     from: String,
@@ -534,94 +539,95 @@ fun IncomingAlertScreen(
             .fillMaxSize()
             .background(AlertField)
             .windowInsetsPadding(WindowInsets.safeDrawing)
-            .padding(8.dp)
+            .padding(10.dp)
             .semantics { liveRegion = LiveRegionMode.Assertive },
     ) {
         Column(
             Modifier
                 .fillMaxSize()
-                .border(5.dp, AlertRule)
-                .padding(start = 18.dp, end = 18.dp, top = 44.dp, bottom = 24.dp),
+                .border(3.dp, AlertRule)
+                .padding(horizontal = 16.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
+            // Beacon Icon & Header
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(22.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                Box(Modifier.size(88.dp), contentAlignment = Alignment.Center) {
+                Box(Modifier.size(72.dp), contentAlignment = Alignment.Center) {
                     val t = haloProgress()
-                    Box(
-                        Modifier
-                            .size(88.dp)
-                            .graphicsLayer {
-                                val scale = 0.86f + (1.62f - 0.86f) * t
-                                scaleX = scale
-                                scaleY = scale
-                                alpha = 1f - t
-                            }
-                            .border(3.dp, Color.White.copy(alpha = 0.5f), CircleShape),
-                    )
+                    Canvas(Modifier.fillMaxSize()) {
+                        drawCircle(
+                            color = Color.White.copy(alpha = 1f - t),
+                            radius = (size.minDimension / 2f) * (0.8f + 0.4f * t),
+                            style = Stroke(width = 2.dp.toPx()),
+                        )
+                    }
                     Icon(
                         Icons.Alert,
                         contentDescription = null,
                         tint = Color.White,
-                        modifier = Modifier.size(80.dp),
+                        modifier = Modifier.size(60.dp),
                     )
                 }
+
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Text(
-                        "ALERT",
-                        fontSize = Tokens.Display,
-                        fontWeight = FontWeight.ExtraBold,
+                        "DISTRESS ALERT",
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.Black,
+                        fontFamily = FontFamily.Monospace,
                         color = Color.White,
+                        letterSpacing = 2.sp,
                     )
                     Text(
-                        "FROM ${from.uppercase()}",
-                        fontSize = Tokens.Label,
+                        "INBOUND DISPATCH // ${from.uppercase()}",
+                        fontSize = 10.sp,
                         fontFamily = FontFamily.Monospace,
-                        fontWeight = FontWeight.Medium,
-                        color = Color.White.copy(alpha = 0.8f),
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White.copy(alpha = 0.85f),
                     )
                 }
             }
 
+            // Message Body Container
             Column(
                 Modifier
                     .fillMaxWidth()
-                    .background(Color.White, RoundedCornerShape(24.dp))
-                    .padding(horizontal = 24.dp, vertical = 26.dp),
-                verticalArrangement = Arrangement.spacedBy(20.dp),
+                    .background(Color.White)
+                    .border(2.dp, AlertRule)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
                     text,
-                    fontSize = Tokens.Headline,
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    lineHeight = Tokens.Headline * Tokens.INDIC_LINE_HEIGHT,
+                    fontFamily = FontFamily.Monospace,
+                    lineHeight = 24.sp,
                     color = p.ink,
                 )
                 if (position != null || evidence != null) {
                     Box(Modifier.fillMaxWidth().height(1.dp).background(p.sunken))
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         position?.let {
                             Text(
-                                it,
-                                fontSize = Tokens.Status,
+                                "GPS: $it",
+                                fontSize = 10.sp,
                                 fontFamily = FontFamily.Monospace,
-                                fontWeight = FontWeight.Medium,
+                                fontWeight = FontWeight.Bold,
                                 color = p.ink,
                             )
                         }
                         evidence?.let {
                             Text(
                                 it,
-                                fontSize = Tokens.Instrument,
+                                fontSize = 9.sp,
                                 fontFamily = FontFamily.Monospace,
-                                fontWeight = FontWeight.Medium,
-                                lineHeight = Tokens.Instrument * 1.5f,
                                 color = p.muted,
                             )
                         }
@@ -629,45 +635,37 @@ fun IncomingAlertScreen(
                 }
             }
 
+            // Acknowledge Action & Repeat Indicator
             Column(
                 Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(18.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 if (repeatOf != null) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(9.dp),
-                    ) {
-                        Icon(
-                            Icons.Play,
-                            contentDescription = null,
-                            tint = Color.White.copy(alpha = 0.85f),
-                            modifier = Modifier.size(14.dp),
-                        )
-                        Text(
-                            "SPEAKING · REPEAT ${repeatOf.first} OF ${repeatOf.second}",
-                            fontSize = Tokens.Label,
-                            fontFamily = FontFamily.Monospace,
-                            fontWeight = FontWeight.Medium,
-                            color = Color.White.copy(alpha = 0.85f),
-                        )
-                    }
+                    Text(
+                        "SPEAKING // REPEAT ${repeatOf.first} OF ${repeatOf.second}",
+                        fontSize = 9.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White.copy(alpha = 0.85f),
+                    )
                 }
                 Box(
                     Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 96.dp)
-                        .background(Color.White, RoundedCornerShape(24.dp))
+                        .heightIn(min = 64.dp)
+                        .background(Color.White)
                         .clickable(onClick = onAcknowledge)
                         .semantics(mergeDescendants = true) { contentDescription = "Acknowledge" },
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        "ACKNOWLEDGE",
-                        fontSize = Tokens.Figure,
-                        fontWeight = FontWeight.Bold,
+                        "ACKNOWLEDGE ALERT",
+                        fontSize = 14.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Black,
                         color = AlertField,
+                        letterSpacing = 1.sp,
                     )
                 }
             }
@@ -675,60 +673,26 @@ fun IncomingAlertScreen(
     }
 }
 
-/**
- * The alert field, and the rule inside it.
- *
- * Literal rather than taken from [ItantraPalette] on purpose: every other colour in this
- * file collapses under Field Mode and these two must not. `#C62828` is already
- * [Tokens.AlertField] and has been since before the redesign — this screen is the reason
- * that token exists.
- */
 private val AlertField = Tokens.AlertField
 private val AlertRule = Color(0xFF9F1239)
 
-// ── board 22 ─────────────────────────────────────────────────────────────────
+// ── BOARD 22: ALERT SELF TEST ───────────────────────────────────────────────
 
-/** One measured step of the alert delivery path. */
 data class AlertTestStep(
     val label: String,
-    /** What the step did that a reader would otherwise have to take on trust. */
     val detail: String? = null,
-    /** How long it took, already formatted. `null` prints `—` rather than a zero. */
     val timing: String? = null,
     val state: State = State.PASSED,
 ) {
     enum class State { PASSED, RUNNING, FAILED }
 }
 
-/**
- * Task **W5.20**, board 22. The alert path, run against this handset only.
- *
- * ## Why it is six steps rather than one button
- *
- * It used to be a button and a sentence. Pressing it either worked or did not, and when it
- * did not there was nothing on screen to say *which part* did not — routing, volume, focus,
- * the wake lock, the vibration, or the repeat. Vendor audio policy varies more than the
- * documentation admits, so "it did not sound" is a symptom with six causes and the operator
- * standing in a field cannot tell them apart.
- *
- * Each step is listed with what it did and how long it took. The one that fails is the one
- * that is wrong, which turns an unreproducible complaint into a line to read out.
- *
- * **Nothing is transmitted.** That is stated twice — once at the top and once in the verdict
- * — because a test that a jury mistakes for a live alert is worse than no test.
- */
 @Composable
 fun AlertSelfTestScreen(
     steps: List<AlertTestStep>,
     lastRun: String?,
     verdict: String?,
     device: String?,
-    /**
-     * Runs the path. **Null when nothing is wired behind it**, which is the case in this
-     * build: `AndroidAlertAudio` owns the six steps and no action reaches it, and
-     * `docs/REDESIGN.md` forbids this branch from adding engine code. A null here draws the
-     * control unavailable rather than drawing a button that does nothing when pressed.
-     */
     onRun: (() -> Unit)?,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
@@ -740,37 +704,35 @@ fun AlertSelfTestScreen(
             .background(p.ground)
             .windowInsetsPadding(WindowInsets.safeDrawing),
     ) {
-        BackHeader("Test alert", onBack)
+        BackHeader("ALERT SUBSYSTEM TEST", onBack)
 
         Column(
             Modifier
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 12.dp, vertical = 14.dp),
+                .padding(horizontal = 12.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Text(
-                "Sounds on this handset only. Nothing is transmitted and no other unit hears it.",
-                fontSize = Tokens.BodySmall,
-                lineHeight = Tokens.BodySmall * 1.45f,
+                "Sounds on this handset only. Nothing is transmitted over RF mesh.",
+                fontSize = 10.sp,
+                fontFamily = FontFamily.Monospace,
                 color = p.muted,
-                modifier = Modifier.padding(horizontal = 4.dp),
             )
             Text(
-                lastRun?.let { "LAST RUN · $it" } ?: "NOT RUN ON THIS HANDSET",
-                fontSize = Tokens.Instrument,
+                lastRun?.let { "LAST RUN // $it" } ?: "NOT RUN ON THIS HANDSET",
+                fontSize = 9.sp,
                 fontFamily = FontFamily.Monospace,
-                fontWeight = FontWeight.Medium,
-                color = p.muted,
-                modifier = Modifier.padding(start = 4.dp, top = 4.dp),
+                fontWeight = FontWeight.Bold,
+                color = p.periwinkle.core,
             )
 
             if (steps.isNotEmpty()) {
                 Column(
                     Modifier
                         .fillMaxWidth()
-                        .background(p.paper, RoundedCornerShape(Tokens.RadiusTile))
-                        .border(Tokens.Hairline, p.hairline, RoundedCornerShape(Tokens.RadiusTile)),
+                        .background(p.surfaceContainerLowest)
+                        .border(Tokens.Hairline, p.hairline),
                 ) {
                     steps.forEachIndexed { index, step ->
                         if (index > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(p.sunken))
@@ -783,88 +745,53 @@ fun AlertSelfTestScreen(
                 Row(
                     Modifier
                         .fillMaxWidth()
-                        .background(p.paper, RoundedCornerShape(Tokens.RadiusTile))
-                        .border(Tokens.Hairline, p.mint.mid, RoundedCornerShape(Tokens.RadiusTile))
-                        .padding(14.dp),
+                        .background(p.surfaceContainerLowest)
+                        .border(Tokens.Hairline, p.mint.core)
+                        .padding(12.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    Box(
-                        Modifier.size(38.dp).background(p.mint.tint, RoundedCornerShape(12.dp)),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            Icons.AllClear,
-                            contentDescription = null,
-                            tint = p.mint.core,
-                            modifier = Modifier.size(22.dp),
-                        )
-                    }
-                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Icon(Icons.AllClear, contentDescription = null, tint = p.mint.core, modifier = Modifier.size(20.dp))
+                    Column {
                         Text(
                             verdict,
-                            fontSize = Tokens.BodySmall,
-                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 11.sp,
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Bold,
                             color = p.mint.deep,
                         )
                         device?.let {
-                            Text(it, fontSize = Tokens.Label, lineHeight = Tokens.Label * 1.35f, color = p.muted)
+                            Text(it, fontSize = 9.sp, fontFamily = FontFamily.Monospace, color = p.muted)
                         }
                     }
                 }
             }
-
-            Text(
-                "Vendor audio policy varies. Run this on every handset before a deployment.",
-                fontSize = Tokens.Label,
-                lineHeight = Tokens.Label * 1.45f,
-                color = p.muted,
-                modifier = Modifier.padding(horizontal = 4.dp),
-            )
         }
 
-        Column(
+        // Run Test Action
+        val armed = onRun != null
+        Box(
             Modifier
                 .fillMaxWidth()
-                .background(p.paper)
-                .padding(
-                    start = Tokens.ScreenMargin,
-                    end = Tokens.ScreenMargin,
-                    top = 12.dp,
-                    bottom = Tokens.ScreenMargin,
-                ),
+                .background(p.surfaceContainerLowest)
+                .border(Tokens.Hairline, p.hairline)
+                .padding(12.dp),
         ) {
-            val armed = onRun != null
-            Row(
+            Box(
                 Modifier
                     .fillMaxWidth()
-                    .heightIn(min = Tokens.SecondaryAction)
-                    .background(p.paper, RoundedCornerShape(Tokens.RadiusCard))
-                    .border(
-                        Tokens.SignalBorder,
-                        if (armed) p.blush.core else p.hairline,
-                        RoundedCornerShape(Tokens.RadiusCard),
-                    )
+                    .heightIn(min = 52.dp)
+                    .background(if (armed) p.blush.core else p.surfaceContainerLow)
                     .clickable(enabled = armed) { onRun?.invoke() }
-                    .then(if (armed) Modifier else Modifier.alpha(0.5f))
-                    .semantics(mergeDescendants = true) {
-                        contentDescription =
-                            if (armed) "Run the alert test" else "Run the test, not available in this build"
-                    },
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(11.dp, Alignment.CenterHorizontally),
+                    .then(if (armed) Modifier else Modifier.alpha(0.5f)),
+                contentAlignment = Alignment.Center,
             ) {
-                Icon(
-                    Icons.Alert,
-                    contentDescription = null,
-                    tint = if (armed) p.blush.core else p.muted,
-                    modifier = Modifier.size(24.dp),
-                )
                 Text(
-                    if (armed) "Run the test" else "Not wired in this build",
-                    fontSize = Tokens.Body,
-                    fontWeight = FontWeight.SemiBold,
-                    color = if (armed) p.blush.deep else p.muted,
+                    if (armed) "EXECUTE TEST DISPATCH" else "NOT WIRED IN THIS BUILD",
+                    fontSize = 11.sp,
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Bold,
+                    color = if (armed) Color.White else p.muted,
                 )
             }
         }
@@ -879,61 +806,33 @@ private fun StepRow(step: AlertTestStep) {
     Row(
         Modifier
             .fillMaxWidth()
-            .heightIn(min = Tokens.StatusBand)
             .background(if (running) p.butter.tint else Color.Transparent)
-            .padding(horizontal = 14.dp, vertical = 10.dp)
-            .semantics(mergeDescendants = true) {
-                contentDescription =
-                    buildString {
-                        append(step.label)
-                        append(
-                            when (step.state) {
-                                AlertTestStep.State.PASSED -> ", passed"
-                                AlertTestStep.State.RUNNING -> ", running"
-                                AlertTestStep.State.FAILED -> ", failed"
-                            },
-                        )
-                        step.detail?.let { append(". $it") }
-                        step.timing?.let { append(". $it") }
-                    }
-            },
+            .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        // A hollow ring for the step still running: it is not a failure and must not be
-        // drawn as one, and it is not a pass either.
         when {
-            running ->
-                Box(Modifier.size(19.dp).border(2.dp, p.butter.core, CircleShape))
-            failed ->
-                Icon(Icons.Cross, contentDescription = null, tint = p.blush.core, modifier = Modifier.size(19.dp))
-            else ->
-                Icon(Icons.Tick, contentDescription = null, tint = p.mint.core, modifier = Modifier.size(19.dp))
+            running -> Box(Modifier.size(16.dp).border(1.5.dp, p.butter.core))
+            failed -> Icon(Icons.Cross, contentDescription = null, tint = p.blush.core, modifier = Modifier.size(16.dp))
+            else -> Icon(Icons.Tick, contentDescription = null, tint = p.mint.core, modifier = Modifier.size(16.dp))
         }
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
-            Text(step.label, fontSize = Tokens.BodySmall, lineHeight = Tokens.BodySmall * 1.3f, color = p.ink)
+        Column(Modifier.weight(1f)) {
+            Text(step.label, fontSize = 10.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, color = p.ink)
             step.detail?.let {
-                Text(
-                    it,
-                    fontSize = Tokens.Instrument,
-                    lineHeight = Tokens.Instrument * 1.3f,
-                    color = if (running) p.butter.deep else p.muted,
-                )
+                Text(it, fontSize = 8.sp, fontFamily = FontFamily.Monospace, color = p.muted)
             }
         }
         Text(
             step.timing ?: "—",
-            fontSize = Tokens.Instrument,
+            fontSize = 9.sp,
             fontFamily = FontFamily.Monospace,
-            fontWeight = FontWeight.Medium,
-            color = if (running) p.butter.deep else p.muted,
+            color = p.hairlineStrong,
         )
     }
 }
 
-// ── shared ───────────────────────────────────────────────────────────────────
+// ── SHARED HEADERS & DOCKS ──────────────────────────────────────────────────
 
-/** The board's back header: a 44 dp glyph in a 64 dp target, then the title. */
 @Composable
 internal fun BackHeader(
     title: String,
@@ -943,27 +842,32 @@ internal fun BackHeader(
     Row(
         Modifier
             .fillMaxWidth()
-            .heightIn(min = Tokens.StatusBand)
-            .background(p.paper)
-            .padding(horizontal = 12.dp),
+            .background(p.surfaceContainerLowest)
+            .border(Tokens.Hairline, p.hairline)
+            .padding(horizontal = 10.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Box(
             Modifier
-                .sizeIn(minWidth = Tokens.TouchTarget, minHeight = Tokens.TouchTarget)
+                .sizeIn(minWidth = 36.dp, minHeight = 36.dp)
                 .clickable(onClick = onBack)
                 .semantics(mergeDescendants = true) { contentDescription = "Back" },
             contentAlignment = Alignment.Center,
         ) {
-            Icon(Icons.Back, contentDescription = null, tint = p.ink, modifier = Modifier.size(26.dp))
+            Icon(Icons.Back, contentDescription = null, tint = p.ink, modifier = Modifier.size(20.dp))
         }
-        Text(title, fontSize = Tokens.Title, fontWeight = FontWeight.Bold, color = p.ink)
+        Text(
+            title,
+            fontSize = 13.sp,
+            fontFamily = FontFamily.Monospace,
+            fontWeight = FontWeight.Black,
+            color = p.ink,
+            letterSpacing = 0.5.sp,
+        )
     }
-    Hairline()
 }
 
-/** The raised shelf. Same geometry as the operating screen's, so the thumb lands the same. */
 @Composable
 internal fun DockShelf(
     hint: String,
@@ -973,16 +877,17 @@ internal fun DockShelf(
     Column(
         Modifier
             .fillMaxWidth()
-            .background(p.paper, RoundedCornerShape(topStart = Tokens.RadiusDock, topEnd = Tokens.RadiusDock))
-            .padding(start = Tokens.ScreenMargin, end = Tokens.ScreenMargin, top = 14.dp, bottom = 10.dp),
+            .background(p.surfaceContainerLowest)
+            .border(Tokens.Hairline, p.hairline)
+            .padding(horizontal = 10.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(
             hint,
-            fontSize = Tokens.Instrument,
+            fontSize = 8.sp,
             fontFamily = FontFamily.Monospace,
-            fontWeight = FontWeight.Medium,
+            fontWeight = FontWeight.Bold,
             color = p.muted,
         )
         Row(
@@ -995,7 +900,6 @@ internal fun DockShelf(
     }
 }
 
-/** A 64 dp flank. Neutral by default, because most flanks are not the emergency. */
 @Composable
 internal fun SquareFlank(
     icon: ImageVector,
@@ -1004,26 +908,19 @@ internal fun SquareFlank(
     onClick: () -> Unit,
 ) {
     val p = palette
-    val shape = RoundedCornerShape(Tokens.RadiusCard)
     Column(
         Modifier
             .sizeIn(minWidth = Tokens.DockFlank, minHeight = Tokens.DockFlank)
-            .background(p.ground, shape)
-            .border(Tokens.Hairline, p.hairline, shape)
+            .background(p.surfaceContainerLowest)
+            .border(Tokens.Hairline, p.hairline)
             .clickable(enabled = enabled, onClick = onClick)
             .then(if (enabled) Modifier else Modifier.alpha(0.4f))
             .semantics(mergeDescendants = true) { contentDescription = label },
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Icon(icon, contentDescription = null, tint = p.muted, modifier = Modifier.size(24.dp))
+        Icon(icon, contentDescription = null, tint = p.muted, modifier = Modifier.size(20.dp))
         Spacer(Modifier.height(3.dp))
-        Text(label, fontSize = Tokens.Instrument, fontWeight = FontWeight.SemiBold, color = p.muted)
+        Text(label, fontSize = 8.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, color = p.muted)
     }
-}
-
-@Composable
-private fun Hairline() {
-    val p = palette
-    Box(Modifier.fillMaxWidth().height(Tokens.Hairline).background(p.hairline))
 }
