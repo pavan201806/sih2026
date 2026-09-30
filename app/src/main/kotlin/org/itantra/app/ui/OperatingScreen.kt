@@ -346,10 +346,17 @@ private fun LanguageChip(
                     text = {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text(
-                                option.label,
+                                option.nativeName,
                                 fontWeight = if (current) FontWeight.Bold else FontWeight.Normal,
                                 color = if (current) p.periwinkle.core else p.ink,
                             )
+                            if (option.englishName != option.nativeName) {
+                                Text(
+                                    "(${option.englishName})",
+                                    fontSize = Tokens.Label,
+                                    color = p.muted,
+                                )
+                            }
                             if (current) {
                                 Box(Modifier.size(6.dp).background(p.periwinkle.core, CircleShape))
                             }
