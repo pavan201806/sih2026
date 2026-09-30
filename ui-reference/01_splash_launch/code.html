@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+
+<html class="" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>RakshaVaani // Offline Emergency Tactical Boot</title>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Barlow Condensed & JetBrains Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,500;0,600;0,700;0,800;1,700&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {"on-secondary-container": "#003c64", "on-primary-fixed": "#00201d", primary: "#006a63", "surface-container-lowest": "#ffffff", "primary-fixed": "#5afaeb", error: "#ba1a1a", outline: "#6b7a77", "on-secondary": "#ffffff", "on-secondary-fixed": "#001d34", "surface-dim": "#cfdbec", "inverse-on-surface": "#e9f1ff", "tertiary-container": "#f8af41", "error-container": "#ffdad6", "surface-container": "#e4efff", "on-surface": "#111c29", "surface-tint": "#006a63", "on-primary-container": "#005650", "on-primary": "#ffffff", "secondary-fixed": "#cfe4ff", "on-tertiary": "#ffffff", secondary: "#00629f", "inverse-primary": "#30ddce", "outline-variant": "#bacac7", surface: "#f8f9ff", tertiary: "#835500", "on-error": "#ffffff", "on-error-container": "#93000a", "on-tertiary-fixed": "#291800", "surface-container-high": "#dde9fb", "on-tertiary-container": "#6b4400", "on-surface-variant": "#3b4a47", "primary-fixed-dim": "#30ddce", background: "#f8f9ff", "secondary-container": "#3fa9ff", "tertiary-fixed-dim": "#ffb955", "surface-container-highest": "#d7e3f5", "surface-container-low": "#eef4ff", "on-secondary-fixed-variant": "#004a79", "surface-variant": "#d7e3f5", "tertiary-fixed": "#ffddb4", "inverse-surface": "#26313e", "secondary-fixed-dim": "#9acbff", "on-background": "#111c29", "surface-bright": "#f8f9ff", "on-primary-fixed-variant": "#00504a", "on-tertiary-fixed-variant": "#633f00", "primary-container": "#19d3c5"}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}, spacing: {"space-xl": "1.5rem", "margin-desktop": "1.5rem", "gutter-desktop": "1rem", "gutter-tablet": "0.75rem", "space-lg": "1rem", "margin-tablet": "1rem", "space-sm": "0.5rem", "space-md": "0.75rem", margin: "0.75rem", gutter: "0.5rem", "space-xs": "0.25rem"}, fontFamily: {"headline-sm": ["Barlow Condensed"], "body-sm": ["JetBrains Mono"], "label-md": ["JetBrains Mono"], "label-lg": ["JetBrains Mono"], "body-lg": ["JetBrains Mono"], "headline-xl": ["Barlow Condensed"], "label-sm": ["JetBrains Mono"], "headline-lg": ["Barlow Condensed"], "headline-md": ["Barlow Condensed"], "body-md": ["JetBrains Mono"], "headline-xl-mobile": ["Barlow Condensed"], headline: ["Barlow Condensed"], display: ["Barlow Condensed"], body: ["JetBrains Mono"], label: ["JetBrains Mono"]}, fontSize: {"headline-sm": ["18px", {lineHeight: "22px", letterSpacing: "0.02em", fontWeight: "600"}], "body-sm": ["11px", {lineHeight: "16px", letterSpacing: "0.01em", fontWeight: "400"}], "label-md": ["10px", {lineHeight: "14px", letterSpacing: "0.1em", fontWeight: "600"}], "label-lg": ["12px", {lineHeight: "16px", letterSpacing: "0.08em", fontWeight: "600"}], "body-lg": ["15px", {lineHeight: "22px", letterSpacing: "-0.01em", fontWeight: "400"}], "headline-xl": ["40px", {lineHeight: "44px", letterSpacing: "0.05em", fontWeight: "700"}], "label-sm": ["9px", {lineHeight: "12px", letterSpacing: "0.12em", fontWeight: "700"}], "headline-lg": ["28px", {lineHeight: "32px", letterSpacing: "0.04em", fontWeight: "600"}], "headline-md": ["22px", {lineHeight: "26px", letterSpacing: "0.03em", fontWeight: "600"}], "body-md": ["13px", {lineHeight: "18px", letterSpacing: "0em", fontWeight: "400"}], "headline-xl-mobile": ["30px", {lineHeight: "34px", letterSpacing: "0.05em", fontWeight: "700"}]}}}};</script>
+<style>
+    /* Technical Grid Overlay */
+    .tactical-grid {
+      background-size: 24px 24px;
+      background-image: 
+        linear-gradient(to right, rgba(59, 74, 71, 0.12) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(59, 74, 71, 0.12) 1px, transparent 1px);
+    }
+    
+    /* Zero radius & mechanical scanline effect */
+    .scanline {
+      background: linear-gradient(
+        to bottom,
+        rgba(255,255,255,0),
+        rgba(255,255,255,0) 50%,
+        rgba(4, 15, 27, 0.4) 50%,
+        rgba(4, 15, 27, 0.4)
+      );
+      background-size: 100% 4px;
+    }
+
+    /* Pulse radar ring keyframe */
+    @keyframes pulse-ring {
+      0% { transform: scale(0.85); opacity: 0.8; }
+      50% { transform: scale(1.05); opacity: 0.2; }
+      100% { transform: scale(0.85); opacity: 0.8; }
+    }
+    .radar-pulse {
+      animation: pulse-ring 4s ease-in-out infinite;
+    }
+
+    /* Blinking terminal cursor */
+    @keyframes cursor-blink {
+      0%, 49% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    .term-cursor {
+      animation: cursor-blink 0.85s steps(1) infinite;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface-container-lowest text-on-surface min-h-screen flex flex-col justify-between tactical-grid scanline relative selection:bg-primary-container selection:text-on-primary font-body-sm select-none overflow-x-hidden">
+<!-- TOP MIL-SPEC STATUS BREADCRUMB STRIP -->
+<header class="w-full border-b border-outline-variant/60 bg-surface-container-lowest/90 px-margin py-space-xs z-20 flex justify-between items-center text-label-sm font-label-sm">
+<div class="flex items-center space-x-2">
+<span class="inline-block w-2 h-2 bg-primary"></span>
+<span class="text-primary font-bold">BOOT SEQUENCE // SECURE_ISOLATE</span>
+<span class="text-outline-variant">|</span>
+<span class="text-outline">AIRGAP: ENGAGED</span>
+</div>
+<div class="flex items-center space-x-3 text-on-surface-variant font-label-sm">
+<span>FREQ: 868.10 MHz</span>
+<span class="text-outline-variant">//</span>
+<span class="text-primary">RF-TX: ARMING</span>
+</div>
+</header>
+<!-- SCREEN CORNER REGISTRATION MARKS (HUD PRAGMATISM) -->
+<div class="absolute top-12 left-3 pointer-events-none text-outline-variant font-label-sm leading-none">+ LAT: 00°00'00"N</div>
+<div class="absolute top-12 right-3 pointer-events-none text-outline-variant font-label-sm leading-none">LON: 000°00'00"E +</div>
+<div class="absolute bottom-12 left-3 pointer-events-none text-outline-variant font-label-sm leading-none">+ RF_MESH_CH: 04</div>
+<div class="absolute bottom-12 right-3 pointer-events-none text-outline-variant font-label-sm leading-none">HOST: RV-ARM64 +</div>
+<!-- CENTERPIECE CONTAINER -->
+<main class="w-full max-w-xl mx-auto px-margin py-space-lg flex-1 flex flex-col justify-center items-center z-10">
+<!-- TACTICAL GEOMETRIC CREST / EMBLEM -->
+<div class="relative w-48 h-48 sm:w-56 sm:h-56 flex items-center justify-center mb-space-md">
+<!-- Concentric Decorative Rings & Brackets -->
+<div class="absolute inset-0 border border-outline-variant/40 rounded-none radar-pulse pointer-events-none"></div>
+<div class="absolute inset-2 border border-dashed border-secondary/30 pointer-events-none"></div>
+<div class="absolute -inset-1 border-t border-b border-primary/40 pointer-events-none"></div>
+<!-- Quadrant Corner Accents -->
+<div class="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-primary"></div>
+<div class="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-primary"></div>
+<div class="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-primary"></div>
+<div class="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-primary"></div>
+<!-- Shield / Wave Vector Nodes -->
+<div class="relative w-36 h-36 sm:w-40 sm:h-40 bg-surface-container-low border border-outline-variant flex flex-col items-center justify-center p-space-sm" style="box-shadow: 0 0 0 1px #19D3C5, 0 0 16px rgba(25, 211, 197, 0.25);">
+<!-- Mechanical Diagonal Slash Lines in Background -->
+<div class="absolute inset-0 opacity-10 pointer-events-none flex flex-col justify-around overflow-hidden">
+<div class="w-full h-px bg-primary rotate-45 transform origin-center scale-150"></div>
+<div class="w-full h-px bg-primary -rotate-45 transform origin-center scale-150"></div>
+</div>
+<!-- Center Node Grid & Radio Symbol -->
+<div class="z-10 flex flex-col items-center">
+<div class="flex items-center space-x-1.5 mb-1.5">
+<span class="w-1.5 h-1.5 bg-secondary-container"></span>
+<span class="w-2.5 h-0.5 bg-primary"></span>
+<span class="w-1.5 h-1.5 bg-primary"></span>
+<span class="w-2.5 h-0.5 bg-primary"></span>
+<span class="w-1.5 h-1.5 bg-secondary-container"></span>
+</div>
+<!-- Radio Waves / Tactical Shield Glyph -->
+<div class="relative flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-5xl" style="font-variation-settings: 'FILL' 1;">
+              security
+            </span>
+<div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+<span class="material-symbols-outlined text-secondary text-2xl animate-ping opacity-60">
+                sensors
+              </span>
+</div>
+</div>
+<div class="mt-2 text-center">
+<div class="text-label-sm font-label-sm text-primary tracking-widest uppercase">NODAL MESH CORE</div>
+<div class="text-[8px] font-label-sm text-outline tracking-wider">SECURE AD-HOC P2P</div>
+</div>
+</div>
+<!-- Micro Tick Indicators -->
+<div class="absolute bottom-1 right-2 text-[8px] font-label-sm text-primary">SYNC:99.8%</div>
+<div class="absolute top-1 left-2 text-[8px] font-label-sm text-outline">RF-ARMED</div>
+</div>
+</div>
+<!-- DISTINCTIVE WORDMARK & SUBTITLE -->
+<div class="text-center w-full mb-space-lg">
+<div class="inline-flex items-center justify-center space-x-2">
+<span class="text-primary font-headline-xl text-headline-xl sm:text-headline-xl text-headline-xl-mobile tracking-[0.18em] font-extrabold uppercase drop-shadow-[0_0_12px_rgba(77,240,225,0.4)]">
+          RAKSHA<span class="text-secondary-fixed">VAANI</span>
+</span>
+<span class="bg-primary text-surface-container-lowest font-headline-sm text-headline-sm px-1.5 py-0.5 font-bold uppercase tracking-wider">
+          // 4G-0
+        </span>
+</div>
+<p class="mt-1 text-on-surface-variant font-label-md text-label-md tracking-[0.2em] uppercase">
+        OFFLINE EMERGENCY COMMUNICATION // ON-DEVICE PROTOCOL
+      </p>
+<div class="mt-2 flex items-center justify-center space-x-3 text-label-sm font-label-sm text-outline">
+<span>MIL-SPEC P2P</span>
+<span>•</span>
+<span class="text-secondary">HARDENED STACK</span>
+<span>•</span>
+<span>ZERO CELLULAR</span>
+</div>
+</div>
+<!-- TECHNICAL BOOT DIAGNOSTIC TELEMETRY BLOCK -->
+<section class="w-full bg-surface-container-low border border-outline-variant p-space-sm sm:p-space-md mb-space-md relative">
+<!-- Chamfer Corner Tag -->
+<div class="absolute top-0 right-0 bg-outline-variant text-surface-container-lowest px-1.5 py-0.5 text-[8px] font-label-sm font-bold uppercase">
+        CONSOLE_OUT // TTY0
+      </div>
+<!-- State Status -->
+<div class="flex items-center space-x-2 mb-space-sm border-b border-outline-variant/40 pb-space-xs">
+<span class="inline-block w-2.5 h-2.5 bg-primary rounded-none shadow-[0_0_8px_#19D3C5] animate-pulse"></span>
+<span class="font-label-md text-label-md text-primary font-bold tracking-wider">
+          STATUS: LOCAL SYSTEM INITIALIZING
+        </span>
+</div>
+<!-- Diagnostic Logs -->
+<div class="space-y-1.5 font-body-sm text-body-sm">
+<div class="flex items-start justify-between text-on-surface">
+<div class="flex items-center space-x-2">
+<span class="text-primary font-bold">[OK]</span>
+<span class="text-on-surface">CORE KERNEL: SECURE MESH BOOT</span>
+</div>
+<span class="text-outline font-label-sm text-[10px]">0.012s</span>
+</div>
+<div class="flex items-start justify-between text-on-surface">
+<div class="flex items-center space-x-2">
+<span class="text-primary font-bold">[OK]</span>
+<span class="text-on-surface">RADIO INTERFACES: WI-FI DIRECT / LORA / BLE</span>
+</div>
+<span class="text-outline font-label-sm text-[10px]">0.048s</span>
+</div>
+<div class="flex items-start justify-between text-on-surface">
+<div class="flex items-center space-x-2">
+<span class="text-primary font-bold">[OK]</span>
+<span class="text-on-surface">ON-DEVICE VOSK &amp; PIPER SPEECH PIPELINE</span>
+</div>
+<span class="text-outline font-label-sm text-[10px]">0.119s</span>
+</div>
+<div class="flex items-start justify-between text-primary-fixed-dim bg-surface-container-high/40 px-1 py-0.5 border-l-2 border-primary">
+<div class="flex items-center space-x-2">
+<span class="text-primary font-bold">[OK]</span>
+<span class="font-medium tracking-wide">0 EXTERNAL SERVERS REQUIRED (100% OFFLINE)</span>
+</div>
+<span class="text-primary font-label-sm text-[10px]">VERIFIED</span>
+</div>
+</div>
+<!-- Realtime Buffer Indicator -->
+<div class="mt-space-md pt-space-xs border-t border-outline-variant/40">
+<div class="flex justify-between items-center text-label-sm font-label-sm mb-1 text-on-surface-variant">
+<span class="flex items-center space-x-1">
+<span class="material-symbols-outlined text-sm text-primary">data_thresholding</span>
+<span class="tracking-wider">INITIALIZING BUFFER...</span>
+</span>
+<span class="text-primary font-bold font-body-sm">100% READY [4096 / 4096 KB]</span>
+</div>
+<!-- Progress Bar Segmented -->
+<div class="w-full h-2 bg-surface-container-lowest border border-outline-variant flex p-0.5 gap-0.5">
+<div class="h-full bg-primary flex-1"></div>
+<div class="h-full bg-primary flex-1"></div>
+<div class="h-full bg-primary flex-1"></div>
+<div class="h-full bg-primary flex-1"></div>
+<div class="h-full bg-primary flex-1"></div>
+<div class="h-full bg-primary flex-1"></div>
+<div class="h-full bg-primary flex-1"></div>
+<div class="h-full bg-primary flex-1"></div>
+<div class="h-full bg-primary flex-1"></div>
+<div class="h-full bg-primary flex-1"></div>
+</div>
+</div>
+</section>
+<!-- PROMPT ACTION TRIGGER: FIELD READY ENTRY -->
+<div class="w-full">
+<button class="w-full bg-primary hover:bg-primary-fixed text-surface-container-lowest font-headline-sm text-headline-sm uppercase py-space-sm px-space-md tracking-widest font-bold flex items-center justify-center space-x-2 transition-all duration-75 active:scale-[0.99] border border-primary shadow-[0_0_12px_rgba(25,211,197,0.3)]" onclick="simulateEnter()">
+<span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">terminal</span>
+<span>ENGAGE TACTICAL CONSOLE</span>
+<span class="material-symbols-outlined text-lg">chevron_right</span>
+</button>
+<div class="flex justify-between items-center mt-1 text-[10px] font-label-sm text-outline px-1">
+<span>AUTO-ROUTING IN 3s</span>
+<span class="inline-flex items-center text-secondary">
+          STANDBY READY <span class="inline-block w-1.5 h-3 ml-1 bg-secondary term-cursor"></span>
+</span>
+</div>
+</div>
+</main>
+<!-- BOTTOM MIL-SPEC FOOTER TELEMETRY STRIP -->
+<footer class="w-full border-t border-outline-variant/60 bg-surface-container-lowest/95 px-margin py-space-xs z-20 flex flex-col sm:flex-row justify-between items-center gap-1 text-label-sm font-label-sm">
+<div class="flex items-center space-x-2 text-on-surface-variant">
+<span class="w-1.5 h-1.5 bg-tertiary"></span>
+<span class="text-on-surface tracking-wider font-semibold">FIELD BUILD v3.4.1</span>
+<span class="text-outline-variant">//</span>
+<span class="text-primary font-mono">NODE ID: RV-NODE-01</span>
+</div>
+<div class="flex items-center space-x-2 text-outline">
+<span class="text-secondary font-bold tracking-wider">NO CLOUD DEPENDENCY</span>
+<span class="text-outline-variant">|</span>
+<span>ENCR: AES-GCM-256</span>
+<span class="text-outline-variant">|</span>
+<span class="text-primary">BATTERY: 98% [4.12V]</span>
+</div>
+</footer>
+<script>
+    function simulateEnter() {
+      const btn = document.querySelector('button');
+      btn.innerHTML = `<span class="material-symbols-outlined text-xl animate-spin">sync</span><span>DEPLOYING RF MESH INTERFACE...</span>`;
+      btn.classList.add('opacity-90');
+      setTimeout(() => {
+        btn.innerHTML = `<span class="material-symbols-outlined text-xl">check</span><span>ONLINE // ENTERING DASHBOARD</span>`;
+      }, 700);
+    }
+  </script>
+</body></html>

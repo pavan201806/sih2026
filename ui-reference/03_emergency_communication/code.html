@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+
+<html class="" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>RakshaVaani Tactical Comms Console</title>
+<!-- Google Fonts: Barlow Condensed & JetBrains Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,600&amp;family=JetBrains+Mono:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {"on-secondary-container": "#003c64", "on-primary-fixed": "#00201d", primary: "#006a63", "surface-container-lowest": "#ffffff", "primary-fixed": "#5afaeb", error: "#ba1a1a", outline: "#6b7a77", "on-secondary": "#ffffff", "on-secondary-fixed": "#001d34", "surface-dim": "#cfdbec", "inverse-on-surface": "#e9f1ff", "tertiary-container": "#f8af41", "error-container": "#ffdad6", "surface-container": "#e4efff", "on-surface": "#111c29", "surface-tint": "#006a63", "on-primary-container": "#005650", "on-primary": "#ffffff", "secondary-fixed": "#cfe4ff", "on-tertiary": "#ffffff", secondary: "#00629f", "inverse-primary": "#30ddce", "outline-variant": "#bacac7", surface: "#f8f9ff", tertiary: "#835500", "on-error": "#ffffff", "on-error-container": "#93000a", "on-tertiary-fixed": "#291800", "surface-container-high": "#dde9fb", "on-tertiary-container": "#6b4400", "on-surface-variant": "#3b4a47", "primary-fixed-dim": "#30ddce", background: "#f8f9ff", "secondary-container": "#3fa9ff", "tertiary-fixed-dim": "#ffb955", "surface-container-highest": "#d7e3f5", "surface-container-low": "#eef4ff", "on-secondary-fixed-variant": "#004a79", "surface-variant": "#d7e3f5", "tertiary-fixed": "#ffddb4", "inverse-surface": "#26313e", "secondary-fixed-dim": "#9acbff", "on-background": "#111c29", "surface-bright": "#f8f9ff", "on-primary-fixed-variant": "#00504a", "on-tertiary-fixed-variant": "#633f00", "primary-container": "#19d3c5"}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}, spacing: {"space-xl": "1.5rem", "margin-desktop": "1.5rem", "gutter-desktop": "1rem", "gutter-tablet": "0.75rem", "space-lg": "1rem", "margin-tablet": "1rem", "space-sm": "0.5rem", "space-md": "0.75rem", margin: "0.75rem", gutter: "0.5rem", "space-xs": "0.25rem"}, fontFamily: {"headline-sm": ["Barlow Condensed"], "body-sm": ["JetBrains Mono"], "label-md": ["JetBrains Mono"], "label-lg": ["JetBrains Mono"], "body-lg": ["JetBrains Mono"], "headline-xl": ["Barlow Condensed"], "label-sm": ["JetBrains Mono"], "headline-lg": ["Barlow Condensed"], "headline-md": ["Barlow Condensed"], "body-md": ["JetBrains Mono"], "headline-xl-mobile": ["Barlow Condensed"], headline: ["Barlow Condensed"], display: ["Barlow Condensed"], body: ["JetBrains Mono"], label: ["JetBrains Mono"]}, fontSize: {"headline-sm": ["18px", {lineHeight: "22px", letterSpacing: "0.02em", fontWeight: "600"}], "body-sm": ["11px", {lineHeight: "16px", letterSpacing: "0.01em", fontWeight: "400"}], "label-md": ["10px", {lineHeight: "14px", letterSpacing: "0.1em", fontWeight: "600"}], "label-lg": ["12px", {lineHeight: "16px", letterSpacing: "0.08em", fontWeight: "600"}], "body-lg": ["15px", {lineHeight: "22px", letterSpacing: "-0.01em", fontWeight: "400"}], "headline-xl": ["40px", {lineHeight: "44px", letterSpacing: "0.05em", fontWeight: "700"}], "label-sm": ["9px", {lineHeight: "12px", letterSpacing: "0.12em", fontWeight: "700"}], "headline-lg": ["28px", {lineHeight: "32px", letterSpacing: "0.04em", fontWeight: "600"}], "headline-md": ["22px", {lineHeight: "26px", letterSpacing: "0.03em", fontWeight: "600"}], "body-md": ["13px", {lineHeight: "18px", letterSpacing: "0em", fontWeight: "400"}], "headline-xl-mobile": ["30px", {lineHeight: "34px", letterSpacing: "0.05em", fontWeight: "700"}]}}}};</script>
+<style>
+    .tactical-grid {
+      background-size: 24px 24px;
+      background-image: 
+        linear-gradient(to right, rgba(59, 74, 71, 0.15) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(59, 74, 71, 0.15) 1px, transparent 1px);
+    }
+    @keyframes pulse-fast {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+    .animate-pulse-fast {
+      animation: pulse-fast 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    .hud-glow {
+      box-shadow: 0 0 0 1px #19D3C5, 0 0 12px rgba(25, 211, 197, 0.35);
+    }
+    .sos-stripes {
+      background: repeating-linear-gradient(
+        -45deg,
+        #FF4D5A,
+        #FF4D5A 10px,
+        #93000A 10px,
+        #93000A 20px
+      );
+    }
+    .corner-bracket-tl {
+      position: relative;
+    }
+    .corner-bracket-tl::before {
+      content: '+';
+      position: absolute;
+      top: -6px;
+      left: -6px;
+      font-size: 11px;
+      color: #3b4a47;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .corner-bracket-tl::after {
+      content: '+';
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      font-size: 11px;
+      color: #3b4a47;
+      font-family: 'JetBrains Mono', monospace;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body-md antialiased selection:bg-primary selection:text-surface-container-lowest min-h-screen flex flex-col justify-between tactical-grid pb-24">
+<!-- TOP APP BAR (Shared Component Anchor) -->
+<header class="fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-margin py-space-xs w-full bg-surface-container-lowest border-b border-outline-variant">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary" data-icon="hub">hub</span>
+<h1 class="text-headline-sm font-headline-sm tracking-wider uppercase text-primary">RAKSHAVAANI // MESH-SYS</h1>
+</div>
+<div class="flex items-center gap-space-sm">
+<div class="hidden sm:flex items-center gap-space-xs px-space-xs py-0.5 border border-outline-variant bg-surface-container-low text-label-sm font-label-sm text-outline">
+<span class="inline-block w-1.5 h-1.5 bg-primary rounded-none"></span>
+        FREQ: 868.1 MHz [SF12]
+      </div>
+<span class="px-space-sm py-0.5 border border-primary text-primary text-label-md font-label-md bg-surface-container-high tracking-widest font-bold">
+        LORA:ACTV
+      </span>
+</div>
+</header>
+<!-- MAIN OPERATIONAL VIEWPORT -->
+<main class="w-full max-w-7xl mx-auto pt-14 px-margin sm:px-gutter-desktop flex-1 flex flex-col gap-space-sm">
+<!-- SUB-STRIP: SOS QUICK TRIGGER & FIELD HEALTH -->
+<section class="w-full flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-space-xs border border-outline-variant bg-surface-container-lowest p-space-xs mt-space-xs">
+<div class="flex items-center gap-space-sm">
+<div class="flex items-center gap-1.5 px-space-sm py-1 bg-surface-container-high border border-outline-variant">
+<span class="w-2 h-2 bg-primary animate-pulse-fast"></span>
+<span class="text-label-sm font-label-sm text-primary tracking-widest uppercase">AIR-GAP FIELD MODE</span>
+</div>
+<span class="text-label-md font-label-md text-outline">BAT: 28.4V // SOLAR CHARGE: +1.2A</span>
+</div>
+<!-- SOS Broadcast Trigger -->
+<button class="relative flex items-center justify-center gap-space-sm px-space-lg py-1.5 bg-[#FF4D5A] hover:bg-error-container text-white border border-[#FF4D5A] active:scale-95 transition-transform duration-75">
+<div class="absolute inset-0 border border-white opacity-20 pointer-events-none"></div>
+<span class="material-symbols-outlined text-white text-base animate-pulse" data-icon="warning" data-weight="fill" style="font-variation-settings: 'FILL' 1;">warning</span>
+<span class="font-headline-sm text-headline-sm tracking-wider uppercase">EMERGENCY BROADCAST SOS</span>
+<span class="text-label-sm font-label-sm px-1 py-0.5 bg-surface-container-lowest text-error">HOLD 1.5s</span>
+</button>
+</section>
+<!-- TECHNICAL STATUS BAR & CHANNEL HEADER -->
+<section class="border border-outline-variant bg-surface-container-low p-space-sm flex flex-col lg:flex-row lg:items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-md">
+<div class="border-l-2 border-primary pl-space-sm">
+<span class="text-label-sm font-label-sm text-outline tracking-wider block">TACTICAL AUDIO CONSOLE</span>
+<h2 class="text-headline-md font-headline-md text-on-surface uppercase tracking-wide">EMERGENCY CHANNEL 01</h2>
+</div>
+<div class="hidden md:flex flex-col border border-outline-variant px-space-sm py-1 bg-surface-container-lowest">
+<span class="text-label-sm font-label-sm text-outline">TARGET CRYPTO-KEY</span>
+<span class="text-body-sm font-body-sm text-primary">ED25519::0x9A4F...B81E</span>
+</div>
+</div>
+<!-- Real-Time Connectivity Telemetry -->
+<div class="flex flex-wrap items-center gap-space-xs text-label-md font-label-md bg-surface-container-lowest p-space-xs border border-outline-variant">
+<div class="flex items-center gap-1 px-space-xs py-0.5 border border-outline-variant text-primary">
+<span class="material-symbols-outlined text-sm" data-icon="sensors">sensors</span>
+<span>LOCAL LINK ACTIVE</span>
+</div>
+<div class="px-space-xs py-0.5 border border-outline-variant text-on-surface-variant">
+          PEER: <strong class="text-on-surface">RAKSHA-NODE-02</strong>
+</div>
+<div class="px-space-xs py-0.5 border border-outline-variant text-secondary">
+          LATENCY: 12ms
+        </div>
+<div class="flex items-center gap-1 px-space-xs py-0.5 bg-error-container text-on-error-container border border-error">
+<span class="material-symbols-outlined text-xs" data-icon="cloud_off">cloud_off</span>
+<span class="font-bold">0% INTERNET (OFFLINE)</span>
+</div>
+</div>
+</section>
+<!-- LANGUAGE SELECTOR BAR -->
+<section class="border border-outline-variant bg-surface-container-lowest px-space-sm py-space-xs flex flex-wrap items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-outline text-base" data-icon="translate">translate</span>
+<span class="text-label-sm font-label-sm text-outline tracking-widest uppercase">INPUT / OUTPUT ENGINE:</span>
+<button class="flex items-center gap-1 border border-primary px-space-sm py-0.5 bg-surface-container-high text-primary text-label-md font-label-md hover:bg-primary hover:text-surface-container-lowest transition-colors">
+<span>TELUGU (తెలుగు)</span>
+<span class="material-symbols-outlined text-xs" data-icon="arrow_drop_down">arrow_drop_down</span>
+</button>
+</div>
+<!-- Indian Language Quick Segmented Toggles -->
+<div class="flex items-center border border-outline-variant bg-surface-container-low divide-x divide-outline-variant">
+<button class="px-space-md py-1 text-label-md font-label-md text-outline hover:text-on-surface hover:bg-surface-container-high transition-colors">
+          HINDI [हिन्दी]
+        </button>
+<button class="px-space-md py-1 text-label-md font-label-md text-surface-container-lowest bg-primary font-bold tracking-wider">
+          TELUGU [తెలుగు]
+        </button>
+<button class="px-space-md py-1 text-label-md font-label-md text-outline hover:text-on-surface hover:bg-surface-container-high transition-colors">
+          TAMIL [தமிழ்]
+        </button>
+<button class="px-space-md py-1 text-label-md font-label-md text-outline hover:text-on-surface hover:bg-surface-container-high transition-colors">
+          ENGLISH [ENG]
+        </button>
+</div>
+</section>
+<!-- CORE WORKSPACE: ASYMMETRIC GRID (HUD INTERFACE) -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-sm">
+<!-- LEFT COLUMN: AUDIO ENGINE & CENTRAL TRANSMIT TRIGGER (7 COLS) -->
+<section class="lg:col-span-7 flex flex-col gap-space-sm">
+<!-- CENTRAL INTERACTIVE MODULE (Large Hexagonal/Circular Mic Module) -->
+<div class="border border-outline-variant bg-surface-container-low p-space-md flex flex-col items-center justify-center relative corner-bracket-tl">
+<!-- Edge Calibration Readout -->
+<div class="w-full flex justify-between items-center text-label-sm font-label-sm text-outline border-b border-outline-variant pb-space-xs mb-space-md">
+<span class="flex items-center gap-1">
+<span class="w-1.5 h-1.5 bg-primary"></span>
+              RF VOCODER: CODEC2 @ 700bps
+            </span>
+<span class="text-primary font-mono tracking-wider">LISTENING... [SENSITIVITY: HIGH // NOISE FILTER: ON]</span>
+</div>
+<!-- PTT Circular Array & Waveform Visualizer -->
+<div class="relative w-full max-w-sm aspect-square flex items-center justify-center my-space-xs">
+<!-- Outer SVG Radial HUD Meter -->
+<svg class="absolute inset-0 w-full h-full -rotate-90 pointer-events-none" viewbox="0 0 200 200">
+<!-- Background Ring -->
+<circle cx="100" cy="100" fill="none" r="88" stroke="#1f2b38" stroke-dasharray="2, 6" stroke-width="2"></circle>
+<!-- Calibration Ring -->
+<circle cx="100" cy="100" fill="none" r="80" stroke="#3b4a47" stroke-width="1"></circle>
+<!-- Active Signal Level -->
+<circle class="transition-all duration-300" cx="100" cy="100" fill="none" r="80" stroke="#19D3C5" stroke-dasharray="140, 400" stroke-linecap="butt" stroke-width="3"></circle>
+<!-- Outer Accent Ticks -->
+<circle cx="100" cy="100" fill="none" opacity="0.6" r="95" stroke="#4df0e1" stroke-dasharray="4, 28" stroke-width="1.5"></circle>
+</svg>
+<!-- Dynamic Frequency Spectrum Bars (Orbiting Bars Representation) -->
+<div class="absolute inset-x-6 flex items-center justify-between pointer-events-none opacity-40">
+<span class="w-1 h-12 bg-primary animate-pulse"></span>
+<span class="w-1 h-8 bg-primary"></span>
+<span class="w-1 h-16 bg-primary animate-pulse"></span>
+<span class="w-1 h-20 bg-primary"></span>
+<span class="w-1 h-6 bg-primary"></span>
+<span class="w-1 h-14 bg-primary animate-pulse"></span>
+<span class="w-1 h-10 bg-primary"></span>
+</div>
+<!-- Tactile Interactive Microphone PTT Button -->
+<button class="relative z-10 w-44 h-44 rounded-none bg-surface-container-lowest border-2 border-primary-container p-2 flex flex-col items-center justify-center text-center group cursor-pointer hud-glow active:scale-95 transition-all" id="pttButton">
+<!-- Geometric Chamfer Accents in Corners -->
+<div class="absolute -top-1 -left-1 w-2.5 h-2.5 bg-primary"></div>
+<div class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-primary"></div>
+<div class="absolute -bottom-1 -left-1 w-2.5 h-2.5 bg-primary"></div>
+<div class="absolute -bottom-1 -right-1 w-2.5 h-2.5 bg-primary"></div>
+<div class="w-20 h-20 bg-primary-container text-surface-container-lowest flex items-center justify-center mb-1 group-hover:bg-primary transition-colors">
+<span class="material-symbols-outlined text-4xl" data-icon="mic" data-weight="fill" style="font-variation-settings: 'FILL' 1;">mic</span>
+</div>
+<span class="text-headline-md font-headline-md tracking-wider text-primary group-hover:text-white uppercase leading-none">
+                HOLD TO SPEAK
+              </span>
+<span class="text-label-sm font-label-sm text-outline tracking-widest mt-1">
+                PTT DUPLEX // CH-01
+              </span>
+</button>
+</div>
+<!-- Bottom Telemetry HUD Status -->
+<div class="w-full grid grid-cols-3 gap-space-xs pt-space-sm border-t border-outline-variant text-center">
+<div class="bg-surface-container-lowest p-space-xs border border-outline-variant">
+<span class="text-label-sm font-label-sm text-outline block">BUFFER QUEUE</span>
+<span class="text-body-md font-body-md text-on-surface font-semibold">0.00 KB</span>
+</div>
+<div class="bg-surface-container-lowest p-space-xs border border-outline-variant">
+<span class="text-label-sm font-label-sm text-outline block">AUDIO SAMPLE RATE</span>
+<span class="text-body-md font-body-md text-primary font-semibold">16 kHz / 16-BIT</span>
+</div>
+<div class="bg-surface-container-lowest p-space-xs border border-outline-variant">
+<span class="text-label-sm font-label-sm text-outline block">ON-CHIP NPU LOAD</span>
+<span class="text-body-md font-body-md text-secondary font-semibold">18.4%</span>
+</div>
+</div>
+</div>
+<!-- PROCESSING PIPELINE (Compact Technical Linear Flow) -->
+<div class="border border-outline-variant bg-surface-container-lowest p-space-sm">
+<div class="flex items-center justify-between pb-space-xs border-b border-outline-variant mb-space-xs">
+<span class="text-label-sm font-label-sm text-outline tracking-wider uppercase">ON-DEVICE SIGNAL CHAIN (ZERO CLOUD DEPENDENCY)</span>
+<span class="text-label-sm font-label-sm text-primary">REALTIME AI PIPELINE</span>
+</div>
+<div class="grid grid-cols-2 sm:grid-cols-5 gap-1 text-center font-mono">
+<div class="border border-outline-variant bg-surface-container-low p-space-xs flex flex-col items-center justify-center">
+<span class="text-label-sm font-label-sm text-outline">STAGE 01</span>
+<span class="text-label-md font-label-md text-primary font-bold">VOICE INPUT</span>
+<span class="text-[8px] text-outline">RAW PCM STREAM</span>
+</div>
+<div class="border border-primary bg-surface-container-high p-space-xs flex flex-col items-center justify-center">
+<span class="text-label-sm font-label-sm text-primary">STAGE 02</span>
+<span class="text-label-md font-label-md text-on-surface font-bold">LOCAL STT (TELUGU)</span>
+<span class="text-[8px] text-primary">WHISPER-TINY.INT8</span>
+</div>
+<div class="border border-outline-variant bg-surface-container-low p-space-xs flex flex-col items-center justify-center">
+<span class="text-label-sm font-label-sm text-outline">STAGE 03</span>
+<span class="text-label-md font-label-md text-on-surface font-bold">ENCODED TEXT</span>
+<span class="text-[8px] text-outline">UTF-8 BINARY PKT</span>
+</div>
+<div class="border border-outline-variant bg-surface-container-low p-space-xs flex flex-col items-center justify-center">
+<span class="text-label-sm font-label-sm text-outline">STAGE 04</span>
+<span class="text-label-md font-label-md text-secondary font-bold">P2P DIRECT LINK</span>
+<span class="text-[8px] text-outline">WIFI-DIR / LORA</span>
+</div>
+<div class="border border-outline-variant bg-surface-container-low col-span-2 sm:col-span-1 p-space-xs flex flex-col items-center justify-center">
+<span class="text-label-sm font-label-sm text-outline">STAGE 05</span>
+<span class="text-label-md font-label-md text-tertiary-fixed font-bold">REMOTE TTS</span>
+<span class="text-[8px] text-outline">VITS SYNTHESIS</span>
+</div>
+</div>
+</div>
+</section>
+<!-- RIGHT COLUMN: REAL-TIME DECODED STREAM & TELEMETRY LOGS (5 COLS) -->
+<section class="lg:col-span-5 flex flex-col gap-space-sm">
+<!-- REAL-TIME TRANSCRIPTION BOX -->
+<div class="border border-outline-variant bg-surface-container-low p-space-md flex flex-col gap-space-xs">
+<div class="flex items-center justify-between pb-space-xs border-b border-outline-variant">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary text-base" data-icon="graphic_eq">graphic_eq</span>
+<span class="text-label-md font-label-md text-primary font-bold uppercase tracking-wider">LIVE SPEECH DECODER</span>
+</div>
+<span class="text-label-sm font-label-sm px-1.5 py-0.5 border border-primary text-primary bg-surface-container-lowest">
+              CONFIDENCE: 98.7%
+            </span>
+</div>
+<!-- Transcription Container with Terminal Aesthetics -->
+<div class="bg-surface-container-lowest border border-outline-variant p-space-md min-h-[140px] flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between text-label-sm font-label-sm text-outline mb-1">
+<span>ORIGINAL (TELUGU INPUT)</span>
+<span>AUDIO LEN: 03.4s</span>
+</div>
+<p class="text-body-lg font-body-lg text-primary leading-snug font-medium">
+                "మమ్మల్ని రక్షించండి, కొండచరియలు విరిగిపడ్డాయి"
+              </p>
+</div>
+<div class="border-t border-outline-variant pt-space-xs mt-space-xs">
+<span class="text-label-sm font-label-sm text-outline block mb-0.5">ON-DEVICE TACTICAL ENGLISH TRANSLATION:</span>
+<p class="text-body-sm font-body-sm text-on-surface bg-surface-container-high p-space-xs border-l-2 border-secondary font-mono">
+                "Urgent: Landslide detected near sector 4, need evacuation unit"
+              </p>
+</div>
+</div>
+</div>
+<!-- TRANSMISSION TELEMETRY LOG (Rugged Mil-Spec Audit Trail) -->
+<div class="border border-outline-variant bg-surface-container-low p-space-md flex-1 flex flex-col">
+<div class="flex items-center justify-between pb-space-xs border-b border-outline-variant mb-space-xs">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-secondary text-sm" data-icon="terminal">terminal</span>
+<span class="text-label-md font-label-md text-secondary font-bold uppercase">TRANSMISSION TELEMETRY LOG</span>
+</div>
+<span class="text-label-sm font-label-sm text-outline">AUTO-ACK: ENABLED</span>
+</div>
+<!-- Status Indicators Chain -->
+<div class="space-y-1.5 mb-space-sm">
+<div class="flex items-center justify-between p-space-xs bg-surface-container-lowest border border-outline-variant">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-base" data-icon="check_box" data-weight="fill" style="font-variation-settings: 'FILL' 1;">check_box</span>
+<span class="text-label-md font-label-md text-on-surface">MESSAGE ENCODED</span>
+</div>
+<span class="text-label-sm font-label-sm text-outline font-mono">T+0.04s // 142 BYTES</span>
+</div>
+<div class="flex items-center justify-between p-space-xs bg-surface-container-lowest border border-outline-variant">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-base" data-icon="check_box" data-weight="fill" style="font-variation-settings: 'FILL' 1;">check_box</span>
+<span class="text-label-md font-label-md text-on-surface">TRANSMITTING VIA WI-FI DIRECT</span>
+</div>
+<span class="text-label-sm font-label-sm text-secondary font-mono">CHANNEL 6 // RSSI: -64dBm</span>
+</div>
+<div class="flex items-center justify-between p-space-xs bg-surface-container-lowest border border-primary">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-base" data-icon="check_box" data-weight="fill" style="font-variation-settings: 'FILL' 1;">check_box</span>
+<span class="text-label-md font-label-md text-primary font-bold">DELIVERED &amp; PLAYED VIA TTS ON NODE-02</span>
+</div>
+<span class="text-label-sm font-label-sm text-primary font-mono">ACK 0x7E31</span>
+</div>
+</div>
+<!-- RECEIVED PEER VOICE MESSAGE AUDIO PLAYER -->
+<div class="mt-auto border border-outline-variant bg-surface-container-lowest p-space-sm">
+<div class="flex items-center justify-between mb-space-xs text-label-sm font-label-sm">
+<div class="flex items-center gap-1 text-tertiary">
+<span class="material-symbols-outlined text-sm" data-icon="campaign">campaign</span>
+<span class="font-bold">INBOUND DISPATCH // RAKSHA-NODE-02</span>
+</div>
+<span class="text-outline">TIME: 14:02:18 IST</span>
+</div>
+<!-- Tactical Audio Waveform Graphic & Controls -->
+<div class="flex items-center gap-space-sm bg-surface-container-high p-space-xs border border-outline-variant">
+<button class="w-8 h-8 bg-primary text-surface-container-lowest flex items-center justify-center hover:bg-white transition-colors">
+<span class="material-symbols-outlined text-base" data-icon="play_arrow" data-weight="fill" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+<!-- Waveform Bars -->
+<div class="flex-1 flex items-center gap-0.5 h-6">
+<span class="w-1 bg-outline h-2"></span>
+<span class="w-1 bg-outline h-3"></span>
+<span class="w-1 bg-primary h-5"></span>
+<span class="w-1 bg-primary h-6"></span>
+<span class="w-1 bg-primary h-4"></span>
+<span class="w-1 bg-primary h-5"></span>
+<span class="w-1 bg-outline h-2"></span>
+<span class="w-1 bg-primary h-6"></span>
+<span class="w-1 bg-primary h-5"></span>
+<span class="w-1 bg-outline h-3"></span>
+<span class="w-1 bg-outline h-1"></span>
+<span class="w-1 bg-primary h-4"></span>
+<span class="w-1 bg-primary h-6"></span>
+<span class="w-1 bg-outline h-3"></span>
+<span class="w-1 bg-outline h-2"></span>
+<span class="w-1 bg-primary h-5"></span>
+<span class="w-1 bg-outline h-2"></span>
+<span class="w-1 bg-outline h-1"></span>
+</div>
+<span class="text-label-sm font-label-sm text-outline font-mono">00:04 / 00:04</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant italic mt-space-xs">
+              TTS Synthesized: "Evacuation patrol delta acknowledged. Moving to Sector 4."
+            </p>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- BOTTOM NAVIGATION BAR (Shared Component Anchor) -->
+<!-- Contextual Lock: Screen is EMERGENCY CHANNEL -> "EMERGENCY" is active tab (index 1) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-gutter py-space-xs bg-surface-container-lowest border-t border-outline-variant">
+<!-- Item 1: DASH (Inactive) -->
+<a class="flex flex-col items-center justify-center text-outline px-space-sm py-space-xs hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="grid_view">grid_view</span>
+<span class="text-label-sm font-label-sm mt-0.5">DASH</span>
+</a>
+<!-- Item 2: EMERGENCY (Active) -->
+<a class="flex flex-col items-center justify-center bg-surface-container-high text-primary border border-primary px-space-sm py-space-xs" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="emergency" data-weight="fill" style="font-variation-settings: 'FILL' 1;">emergency</span>
+<span class="text-label-sm font-label-sm mt-0.5 font-bold">EMERGENCY</span>
+</a>
+<!-- Item 3: LINK (Inactive) -->
+<a class="flex flex-col items-center justify-center text-outline px-space-sm py-space-xs hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="settings_input_antenna">settings_input_antenna</span>
+<span class="text-label-sm font-label-sm mt-0.5">LINK</span>
+</a>
+<!-- Item 4: AI ENGINE (Inactive) -->
+<a class="flex flex-col items-center justify-center text-outline px-space-sm py-space-xs hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="memory">memory</span>
+<span class="text-label-sm font-label-sm mt-0.5">AI ENGINE</span>
+</a>
+<!-- Item 5: CONTROL (Inactive) -->
+<a class="flex flex-col items-center justify-center text-outline px-space-sm py-space-xs hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="tune">tune</span>
+<span class="text-label-sm font-label-sm mt-0.5">CONTROL</span>
+</a>
+</nav>
+<!-- Lightweight Tactical Interaction Scripts -->
+<script>
+    const pttButton = document.getElementById('pttButton');
+    if (pttButton) {
+      pttButton.addEventListener('mousedown', () => {
+        pttButton.classList.add('bg-primary', 'text-surface-container-lowest');
+        pttButton.classList.remove('bg-surface-container-lowest');
+      });
+      pttButton.addEventListener('mouseup', () => {
+        pttButton.classList.remove('bg-primary', 'text-surface-container-lowest');
+        pttButton.classList.add('bg-surface-container-lowest');
+      });
+      pttButton.addEventListener('touchstart', () => {
+        pttButton.classList.add('bg-primary', 'text-surface-container-lowest');
+        pttButton.classList.remove('bg-surface-container-lowest');
+      });
+      pttButton.addEventListener('touchend', () => {
+        pttButton.classList.remove('bg-primary', 'text-surface-container-lowest');
+        pttButton.classList.add('bg-surface-container-lowest');
+      });
+    }
+  </script>
+</body></html>

@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+
+<html class="" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>RakshaVaani // Link Control</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS with configuration -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {"on-secondary-container": "#003c64", "on-primary-fixed": "#00201d", primary: "#006a63", "surface-container-lowest": "#ffffff", "primary-fixed": "#5afaeb", error: "#ba1a1a", outline: "#6b7a77", "on-secondary": "#ffffff", "on-secondary-fixed": "#001d34", "surface-dim": "#cfdbec", "inverse-on-surface": "#e9f1ff", "tertiary-container": "#f8af41", "error-container": "#ffdad6", "surface-container": "#e4efff", "on-surface": "#111c29", "surface-tint": "#006a63", "on-primary-container": "#005650", "on-primary": "#ffffff", "secondary-fixed": "#cfe4ff", "on-tertiary": "#ffffff", secondary: "#00629f", "inverse-primary": "#30ddce", "outline-variant": "#bacac7", surface: "#f8f9ff", tertiary: "#835500", "on-error": "#ffffff", "on-error-container": "#93000a", "on-tertiary-fixed": "#291800", "surface-container-high": "#dde9fb", "on-tertiary-container": "#6b4400", "on-surface-variant": "#3b4a47", "primary-fixed-dim": "#30ddce", background: "#f8f9ff", "secondary-container": "#3fa9ff", "tertiary-fixed-dim": "#ffb955", "surface-container-highest": "#d7e3f5", "surface-container-low": "#eef4ff", "on-secondary-fixed-variant": "#004a79", "surface-variant": "#d7e3f5", "tertiary-fixed": "#ffddb4", "inverse-surface": "#26313e", "secondary-fixed-dim": "#9acbff", "on-background": "#111c29", "surface-bright": "#f8f9ff", "on-primary-fixed-variant": "#00504a", "on-tertiary-fixed-variant": "#633f00", "primary-container": "#19d3c5"}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}, spacing: {"space-xl": "1.5rem", "margin-desktop": "1.5rem", "gutter-desktop": "1rem", "gutter-tablet": "0.75rem", "space-lg": "1rem", "margin-tablet": "1rem", "space-sm": "0.5rem", "space-md": "0.75rem", margin: "0.75rem", gutter: "0.5rem", "space-xs": "0.25rem"}, fontFamily: {"headline-sm": ["Barlow Condensed"], "body-sm": ["JetBrains Mono"], "label-md": ["JetBrains Mono"], "label-lg": ["JetBrains Mono"], "body-lg": ["JetBrains Mono"], "headline-xl": ["Barlow Condensed"], "label-sm": ["JetBrains Mono"], "headline-lg": ["Barlow Condensed"], "headline-md": ["Barlow Condensed"], "body-md": ["JetBrains Mono"], "headline-xl-mobile": ["Barlow Condensed"], headline: ["Barlow Condensed"], display: ["Barlow Condensed"], body: ["JetBrains Mono"], label: ["JetBrains Mono"]}, fontSize: {"headline-sm": ["18px", {lineHeight: "22px", letterSpacing: "0.02em", fontWeight: "600"}], "body-sm": ["11px", {lineHeight: "16px", letterSpacing: "0.01em", fontWeight: "400"}], "label-md": ["10px", {lineHeight: "14px", letterSpacing: "0.1em", fontWeight: "600"}], "label-lg": ["12px", {lineHeight: "16px", letterSpacing: "0.08em", fontWeight: "600"}], "body-lg": ["15px", {lineHeight: "22px", letterSpacing: "-0.01em", fontWeight: "400"}], "headline-xl": ["40px", {lineHeight: "44px", letterSpacing: "0.05em", fontWeight: "700"}], "label-sm": ["9px", {lineHeight: "12px", letterSpacing: "0.12em", fontWeight: "700"}], "headline-lg": ["28px", {lineHeight: "32px", letterSpacing: "0.04em", fontWeight: "600"}], "headline-md": ["22px", {lineHeight: "26px", letterSpacing: "0.03em", fontWeight: "600"}], "body-md": ["13px", {lineHeight: "18px", letterSpacing: "0em", fontWeight: "400"}], "headline-xl-mobile": ["30px", {lineHeight: "34px", letterSpacing: "0.05em", fontWeight: "700"}]}}}};</script>
+<style>
+    /* Tactical HUD grid accents and hairline geometry */
+    .hud-cut-corner {
+      clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+    }
+    .hud-glow-cyan {
+      box-shadow: 0 0 0 1px #19D3C5, 0 0 12px rgba(25, 211, 197, 0.25);
+    }
+    .radar-sweep {
+      background: conic-gradient(from 0deg at 50% 50%, rgba(25, 211, 197, 0.2) 0deg, transparent 60deg, transparent 360deg);
+      animation: sweep 4s linear infinite;
+    }
+    @keyframes sweep {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .pulse-signal {
+      animation: pulseGlow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.35; }
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface min-h-screen pb-24 antialiased selection:bg-primary selection:text-on-primary">
+<!-- SHARED TOP APP BAR -->
+<header class="fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-margin py-space-xs w-full bg-surface-container-lowest border-b border-outline-variant">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]" data-icon="hub">hub</span>
+<span class="text-headline-sm font-headline-sm tracking-wider uppercase text-primary">RAKSHAVAANI // MESH-SYS</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="text-label-sm font-label-sm border border-outline-variant px-1.5 py-0.5 bg-surface-container-low text-primary flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 bg-primary pulse-signal inline-block"></span>
+        LORA:ACTV
+      </span>
+<span class="material-symbols-outlined text-outline text-[18px] hidden sm:inline-block" data-icon="terminal">terminal</span>
+</div>
+</header>
+<!-- TELEMETRY BAND & SCREEN SUBHEADER -->
+<div class="pt-12 px-margin border-b border-outline-variant bg-surface-container-lowest">
+<div class="max-w-7xl mx-auto py-2.5 flex flex-wrap items-end justify-between gap-2">
+<div>
+<div class="flex items-center gap-2">
+<span class="text-label-sm font-label-sm text-outline uppercase tracking-widest">[SYS://NET_LAYER/PHY]</span>
+<span class="text-label-sm font-label-sm text-tertiary-container flex items-center gap-1">
+<span class="w-1 h-1 bg-tertiary-container"></span> CH: 04 // 915 MHZ
+          </span>
+</div>
+<h1 class="text-headline-lg font-headline-lg uppercase tracking-wider text-on-surface">LINK CONTROL</h1>
+<p class="text-body-sm font-body-sm text-outline tracking-wider uppercase">OFFLINE PHYSICAL LAYER TRANSPORTS</p>
+</div>
+<!-- Realtime Hardware Telemetry Bar -->
+<div class="flex items-center gap-3 text-label-sm font-label-sm bg-surface-container-low border border-outline-variant px-3 py-1.5">
+<div class="flex items-center gap-1.5">
+<span class="text-outline">PWR:</span>
+<span class="text-primary font-bold">3.94V [92%]</span>
+</div>
+<span class="text-outline-variant">|</span>
+<div class="flex items-center gap-1.5">
+<span class="text-outline">HOPS:</span>
+<span class="text-on-surface">02 MAX</span>
+</div>
+<span class="text-outline-variant">|</span>
+<div class="flex items-center gap-1.5">
+<span class="text-outline">NOISE FL:</span>
+<span class="text-secondary">-104 dBm</span>
+</div>
+</div>
+</div>
+</div>
+<!-- MAIN VIEWPORT GRID -->
+<main class="max-w-7xl mx-auto px-margin py-space-md grid grid-cols-1 lg:grid-cols-12 gap-space-md">
+<!-- LEFT PANEL: Active Hardware Node & Physical Carriers (7 Cols on desktop) -->
+<div class="lg:col-span-7 space-y-space-md">
+<!-- PRIMARY CONNECTED HARDWARE NODE MODULE -->
+<section class="border border-outline-variant bg-surface-container-low p-space-md relative hud-cut-corner">
+<!-- Corner Technical Marks -->
+<span class="absolute top-1 left-1 text-label-sm font-label-sm text-outline-variant select-none">+</span>
+<span class="absolute top-1 right-2 text-label-sm font-label-sm text-outline-variant select-none">+</span>
+<div class="flex items-center justify-between border-b border-outline-variant pb-2 mb-3">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 bg-primary"></span>
+<span class="text-label-md font-label-md uppercase tracking-wider text-outline">CONNECTED HARDWARE NODE</span>
+</div>
+<span class="text-label-sm font-label-sm text-primary border border-primary px-1.5 py-0.5 bg-surface-container-lowest">PRIMARY MASTER</span>
+</div>
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface-container-lowest p-space-sm border border-outline-variant mb-space-md">
+<div>
+<div class="text-headline-md font-headline-md tracking-wider text-primary">RAKSHA NODE 02</div>
+<div class="text-label-sm font-label-sm text-outline">MAC/P2P: 84:F3:EB:21:49:10 // HARDWARE REV: C4</div>
+</div>
+<div class="flex flex-row sm:flex-col items-end justify-between border-t sm:border-t-0 border-outline-variant pt-2 sm:pt-0">
+<span class="text-label-md font-label-md text-primary font-bold flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 bg-primary pulse-signal"></span>
+              LINK ACTIVE // FULL DUPLEX
+            </span>
+<span class="text-body-sm font-body-sm text-on-surface-variant">SIGNAL: <strong class="text-primary">-42 dBm</strong> (EXCELLENT)</span>
+<span class="text-label-sm font-label-sm text-outline">EST. RANGE: ~85m LINE-OF-SIGHT</span>
+</div>
+</div>
+<!-- Realtime Spectrum Visualizer Strip -->
+<div class="mb-space-md">
+<div class="flex justify-between items-center text-label-sm font-label-sm text-outline mb-1">
+<span>RF SIGNAL INTEGRITY // CARRIER SNR: +18.4 dB</span>
+<span class="text-primary">BER: 0.0001%</span>
+</div>
+<div class="grid grid-cols-24 gap-0.5 h-3 bg-surface-container-lowest p-0.5 border border-outline-variant">
+<div class="bg-primary h-full"></div>
+<div class="bg-primary h-full"></div>
+<div class="bg-primary h-full"></div>
+<div class="bg-primary h-full"></div>
+<div class="bg-primary h-full"></div>
+<div class="bg-primary h-full"></div>
+<div class="bg-primary h-full"></div>
+<div class="bg-primary h-full"></div>
+<div class="bg-primary h-full"></div>
+<div class="bg-primary h-full"></div>
+<div class="bg-primary h-full"></div>
+<div class="bg-primary h-full"></div>
+<div class="bg-primary h-full"></div>
+<div class="bg-primary h-full"></div>
+<div class="bg-primary h-full"></div>
+<div class="bg-primary h-full"></div>
+<div class="bg-primary h-full"></div>
+<div class="bg-primary h-full"></div>
+<div class="bg-primary h-full"></div>
+<div class="bg-primary/40 h-full"></div>
+<div class="bg-primary/30 h-full"></div>
+<div class="bg-primary/20 h-full"></div>
+<div class="bg-outline-variant h-full"></div>
+<div class="bg-outline-variant h-full"></div>
+</div>
+</div>
+<!-- CARRIER MODE SELECTOR / CARDS -->
+<div class="space-y-space-xs">
+<div class="text-label-md font-label-md text-outline uppercase tracking-wider mb-2">COMMUNICATION TRANSPORTS (MULTI-PHY)</div>
+<!-- CARRIER 1: WI-FI DIRECT (ACTIVE) -->
+<div class="border border-primary bg-surface-container-high p-space-sm hud-glow-cyan relative">
+<div class="flex items-center justify-between mb-1.5">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]" data-icon="wifi_tethering">wifi_tethering</span>
+<span class="text-headline-sm font-headline-sm text-primary">1. WI-FI DIRECT</span>
+</div>
+<span class="text-label-sm font-label-sm font-bold bg-primary text-on-primary px-2 py-0.5">CONNECTED (ACTIVE)</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface pl-7">5.8 GHz // Throughput: 14.8 Mbps // Direct P2P Tunnel</p>
+<div class="pl-7 mt-2 flex items-center gap-4 text-label-sm font-label-sm text-outline">
+<span>CIPHER: WPA3-SAE OFF-GRID</span>
+<span>PACKETS: 4,891 TX / 5,102 RX</span>
+</div>
+</div>
+<!-- CARRIER 2: BLUETOOTH (BLE MESH) (STANDBY) -->
+<div class="border border-outline-variant bg-surface-container-lowest p-space-sm hover:border-outline transition-colors">
+<div class="flex items-center justify-between mb-1.5">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[20px]" data-icon="bluetooth">bluetooth</span>
+<span class="text-headline-sm font-headline-sm text-on-surface">2. BLUETOOTH (BLE MESH)</span>
+</div>
+<span class="text-label-sm font-label-sm border border-secondary text-secondary px-2 py-0.5 bg-surface-container-low">AVAILABLE (STANDBY)</span>
+</div>
+<p class="text-body-sm font-body-sm text-outline pl-7">BLE 5.2 Extended Range // Paired Nodes: 3</p>
+<div class="pl-7 mt-2 flex items-center justify-between text-label-sm font-label-sm text-outline">
+<span>LATENCY: ~32ms // POWER DRAW: MINIMAL</span>
+<button class="text-secondary hover:underline cursor-pointer">FORCE PROMOTE &gt;</button>
+</div>
+</div>
+<!-- CARRIER 3: LORA (LONG RANGE RF) (FAILOVER) -->
+<div class="border border-outline-variant bg-surface-container-lowest p-space-sm hover:border-outline transition-colors">
+<div class="flex items-center justify-between mb-1.5">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary text-[20px]" data-icon="radio">radio</span>
+<span class="text-headline-sm font-headline-sm text-on-surface">3. LORA (LONG RANGE RF)</span>
+</div>
+<span class="text-label-sm font-label-sm border border-tertiary-container text-tertiary-container px-2 py-0.5 bg-surface-container-low">STANDBY (READY FOR FAILOVER)</span>
+</div>
+<p class="text-body-sm font-body-sm text-outline pl-7">868.10 MHz // 22 dBm // Max Distance: ~7.2 km</p>
+<div class="pl-7 mt-2 flex items-center justify-between text-label-sm font-label-sm text-outline">
+<span>SF7 / BW 125 kHz // CR 4/5 // RETRIES: 0</span>
+<span class="text-tertiary-fixed-dim">FALLBACK READY</span>
+</div>
+</div>
+</div>
+</section>
+<!-- PROMINENT SCAN & DISCOVERY TRIGGER -->
+<button class="w-full bg-primary hover:bg-primary-fixed text-on-primary font-headline-md text-headline-md tracking-wider py-3 px-space-md uppercase flex items-center justify-center gap-3 transition-colors active:scale-[0.99] border border-primary">
+<span class="material-symbols-outlined text-[24px]" data-icon="radar">radar</span>
+        ESTABLISH CONNECTION / SCAN LOCAL NODES
+      </button>
+</div>
+<!-- RIGHT PANEL: Field Nodes Queue & Diagnostics Controls (5 Cols on desktop) -->
+<div class="lg:col-span-5 space-y-space-md">
+<!-- DISCOVERED FIELD NODES LIST -->
+<section class="border border-outline-variant bg-surface-container-low p-space-md">
+<div class="flex items-center justify-between border-b border-outline-variant pb-2 mb-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[18px]" data-icon="travel_explore">travel_explore</span>
+<span class="text-label-md font-label-md uppercase tracking-wider text-outline">DISCOVERED FIELD NODES</span>
+</div>
+<span class="text-label-sm font-label-sm text-secondary border border-outline-variant px-1.5 py-0.2">ACTIVE POLLING</span>
+</div>
+<div class="space-y-space-sm">
+<!-- Node 1 -->
+<div class="border border-outline-variant bg-surface-container-lowest p-space-sm hover:border-secondary transition-colors">
+<div class="flex items-start justify-between">
+<div>
+<div class="text-headline-sm font-headline-sm text-on-surface">RAKSHA-NODE-04</div>
+<div class="text-label-sm font-label-sm text-tertiary tracking-wide">[DISASTER RELIEF HQ]</div>
+</div>
+<span class="text-label-md font-label-md text-primary font-bold">RSSI -68 dBm</span>
+</div>
+<div class="mt-2 pt-2 border-t border-outline-variant/60 flex items-center justify-between">
+<span class="text-label-sm font-label-sm text-outline">HOP COUNT: 1 // TYPE: BASE STATION</span>
+<button class="bg-surface-container-high hover:bg-secondary hover:text-on-secondary text-secondary text-label-md font-label-md px-2.5 py-1 border border-secondary transition-colors uppercase">
+                [PAIR / CONNECT]
+              </button>
+</div>
+</div>
+<!-- Node 2 -->
+<div class="border border-outline-variant bg-surface-container-lowest p-space-sm hover:border-secondary transition-colors">
+<div class="flex items-start justify-between">
+<div>
+<div class="text-headline-sm font-headline-sm text-on-surface">RAKSHA-MEDIC-01</div>
+<div class="text-label-sm font-label-sm text-error tracking-wide">[AMBULANCE SQUAD]</div>
+</div>
+<span class="text-label-md font-label-md text-tertiary-container font-bold">RSSI -74 dBm</span>
+</div>
+<div class="mt-2 pt-2 border-t border-outline-variant/60 flex items-center justify-between">
+<span class="text-label-sm font-label-sm text-outline">HOP COUNT: 2 // TYPE: MOBILE TACTICAL</span>
+<button class="bg-surface-container-high hover:bg-secondary hover:text-on-secondary text-secondary text-label-md font-label-md px-2.5 py-1 border border-secondary transition-colors uppercase">
+                [PAIR / CONNECT]
+              </button>
+</div>
+</div>
+<!-- Node 3 (Additional Tactical Mesh Unit) -->
+<div class="border border-outline-variant bg-surface-container-lowest p-space-sm opacity-80 hover:opacity-100 transition-opacity">
+<div class="flex items-start justify-between">
+<div>
+<div class="text-headline-sm font-headline-sm text-on-surface">RAKSHA-CIVIC-09</div>
+<div class="text-label-sm font-label-sm text-outline tracking-wide">[CIVIL RELAY REPEATER]</div>
+</div>
+<span class="text-label-md font-label-md text-outline font-bold">RSSI -89 dBm</span>
+</div>
+<div class="mt-2 pt-2 border-t border-outline-variant/60 flex items-center justify-between">
+<span class="text-label-sm font-label-sm text-outline">WEAK SIGNAL // HOP COUNT: 3</span>
+<button class="border border-outline-variant text-outline hover:text-on-surface text-label-md font-label-md px-2 py-1 uppercase">
+                [PING NODE]
+              </button>
+</div>
+</div>
+</div>
+</section>
+<!-- SIGNAL DIAGNOSTICS & CHANNEL SELECTION -->
+<section class="border border-outline-variant bg-surface-container-low p-space-md">
+<div class="flex items-center gap-2 border-b border-outline-variant pb-2 mb-3">
+<span class="material-symbols-outlined text-outline text-[18px]" data-icon="tune">tune</span>
+<span class="text-label-md font-label-md uppercase tracking-wider text-outline">SIGNAL DIAGNOSTICS &amp; RF TUNING</span>
+</div>
+<div class="space-y-space-md">
+<!-- Manual Channel Override -->
+<div>
+<label class="block text-label-sm font-label-sm uppercase text-outline mb-1.5">MANUAL CHANNEL OVERRIDE (AUTO-HOP DISABLE)</label>
+<div class="grid grid-cols-4 gap-1">
+<button class="border border-primary bg-surface-container-high text-primary text-label-md font-label-md py-1.5 text-center">CH 01</button>
+<button class="border border-outline-variant bg-surface-container-lowest text-outline hover:text-on-surface text-label-md font-label-md py-1.5 text-center">CH 02</button>
+<button class="border border-outline-variant bg-surface-container-lowest text-outline hover:text-on-surface text-label-md font-label-md py-1.5 text-center">CH 03</button>
+<button class="border border-outline-variant bg-surface-container-lowest text-outline hover:text-on-surface text-label-md font-label-md py-1.5 text-center">CH 04</button>
+</div>
+</div>
+<!-- RF Power Boost Toggle -->
+<div class="flex items-center justify-between p-space-sm border border-outline-variant bg-surface-container-lowest">
+<div>
+<div class="text-label-md font-label-md uppercase text-on-surface font-bold">RF POWER BOOST (+27 dBm)</div>
+<div class="text-label-sm font-label-sm text-outline">DRAINS 1.4x BATTERY // OVERRIDES THERMAL CEILING</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-high peer-focus:outline-none border border-outline-variant peer-checked:bg-primary peer-checked:border-primary transition-colors"></div>
+<span class="absolute left-1 top-1 w-4 h-4 bg-outline peer-checked:bg-on-primary peer-checked:translate-x-5 transition-transform"></span>
+</label>
+</div>
+<!-- Direct Packet Terminal Output -->
+<div class="bg-surface-container-lowest border border-outline-variant p-2 font-mono text-label-sm text-outline">
+<div class="text-primary">&gt; LORA_PHY: CARRIER LOCK ACQUIRED (0x84F3)</div>
+<div>&gt; RSSI: -42dBm | SNR: 18.4dB | FREQ: 5745MHz</div>
+<div>&gt; LINK PING: 4ms RTT // ZERO PACKET LOSS</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- SHARED BOTTOM NAVIGATION BAR -->
+<!-- Active Tab: "LINK" mapped directly to style_active_navigation per semantic lock -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-gutter py-space-xs bg-surface-container-lowest border-t border-outline-variant">
+<!-- DASH -->
+<button class="flex flex-col items-center justify-center text-outline px-space-sm py-space-xs hover:text-primary transition-colors cursor-pointer">
+<span class="material-symbols-outlined text-[20px]" data-icon="grid_view">grid_view</span>
+<span class="text-label-sm font-label-sm">DASH</span>
+</button>
+<!-- EMERGENCY -->
+<button class="flex flex-col items-center justify-center text-outline px-space-sm py-space-xs hover:text-primary transition-colors cursor-pointer">
+<span class="material-symbols-outlined text-[20px]" data-icon="emergency">emergency</span>
+<span class="text-label-sm font-label-sm">EMERGENCY</span>
+</button>
+<!-- LINK (ACTIVE) -->
+<button class="flex flex-col items-center justify-center bg-surface-container-high text-primary border border-primary px-space-sm py-space-xs cursor-pointer">
+<span class="material-symbols-outlined text-[20px]" data-icon="settings_input_antenna" style="font-variation-settings: 'FILL' 1;">settings_input_antenna</span>
+<span class="text-label-sm font-label-sm font-bold">LINK</span>
+</button>
+<!-- AI ENGINE -->
+<button class="flex flex-col items-center justify-center text-outline px-space-sm py-space-xs hover:text-primary transition-colors cursor-pointer">
+<span class="material-symbols-outlined text-[20px]" data-icon="memory">memory</span>
+<span class="text-label-sm font-label-sm">AI ENGINE</span>
+</button>
+<!-- CONTROL -->
+<button class="flex flex-col items-center justify-center text-outline px-space-sm py-space-xs hover:text-primary transition-colors cursor-pointer">
+<span class="material-symbols-outlined text-[20px]" data-icon="tune">tune</span>
+<span class="text-label-sm font-label-sm">CONTROL</span>
+</button>
+</nav>
+</body></html>

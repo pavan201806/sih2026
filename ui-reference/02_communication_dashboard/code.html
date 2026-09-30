@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+
+<html class="" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>RakshaVaani Tactical Interface</title>
+<!-- Google Fonts: Barlow Condensed & JetBrains Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&amp;family=JetBrains+Mono:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {"on-secondary-container": "#003c64", "on-primary-fixed": "#00201d", primary: "#006a63", "surface-container-lowest": "#ffffff", "primary-fixed": "#5afaeb", error: "#ba1a1a", outline: "#6b7a77", "on-secondary": "#ffffff", "on-secondary-fixed": "#001d34", "surface-dim": "#cfdbec", "inverse-on-surface": "#e9f1ff", "tertiary-container": "#f8af41", "error-container": "#ffdad6", "surface-container": "#e4efff", "on-surface": "#111c29", "surface-tint": "#006a63", "on-primary-container": "#005650", "on-primary": "#ffffff", "secondary-fixed": "#cfe4ff", "on-tertiary": "#ffffff", secondary: "#00629f", "inverse-primary": "#30ddce", "outline-variant": "#bacac7", surface: "#f8f9ff", tertiary: "#835500", "on-error": "#ffffff", "on-error-container": "#93000a", "on-tertiary-fixed": "#291800", "surface-container-high": "#dde9fb", "on-tertiary-container": "#6b4400", "on-surface-variant": "#3b4a47", "primary-fixed-dim": "#30ddce", background: "#f8f9ff", "secondary-container": "#3fa9ff", "tertiary-fixed-dim": "#ffb955", "surface-container-highest": "#d7e3f5", "surface-container-low": "#eef4ff", "on-secondary-fixed-variant": "#004a79", "surface-variant": "#d7e3f5", "tertiary-fixed": "#ffddb4", "inverse-surface": "#26313e", "secondary-fixed-dim": "#9acbff", "on-background": "#111c29", "surface-bright": "#f8f9ff", "on-primary-fixed-variant": "#00504a", "on-tertiary-fixed-variant": "#633f00", "primary-container": "#19d3c5"}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}, spacing: {"space-xl": "1.5rem", "margin-desktop": "1.5rem", "gutter-desktop": "1rem", "gutter-tablet": "0.75rem", "space-lg": "1rem", "margin-tablet": "1rem", "space-sm": "0.5rem", "space-md": "0.75rem", margin: "0.75rem", gutter: "0.5rem", "space-xs": "0.25rem"}, fontFamily: {"headline-sm": ["Barlow Condensed"], "body-sm": ["JetBrains Mono"], "label-md": ["JetBrains Mono"], "label-lg": ["JetBrains Mono"], "body-lg": ["JetBrains Mono"], "headline-xl": ["Barlow Condensed"], "label-sm": ["JetBrains Mono"], "headline-lg": ["Barlow Condensed"], "headline-md": ["Barlow Condensed"], "body-md": ["JetBrains Mono"], "headline-xl-mobile": ["Barlow Condensed"], headline: ["Barlow Condensed"], display: ["Barlow Condensed"], body: ["JetBrains Mono"], label: ["JetBrains Mono"]}, fontSize: {"headline-sm": ["18px", {lineHeight: "22px", letterSpacing: "0.02em", fontWeight: "600"}], "body-sm": ["11px", {lineHeight: "16px", letterSpacing: "0.01em", fontWeight: "400"}], "label-md": ["10px", {lineHeight: "14px", letterSpacing: "0.1em", fontWeight: "600"}], "label-lg": ["12px", {lineHeight: "16px", letterSpacing: "0.08em", fontWeight: "600"}], "body-lg": ["15px", {lineHeight: "22px", letterSpacing: "-0.01em", fontWeight: "400"}], "headline-xl": ["40px", {lineHeight: "44px", letterSpacing: "0.05em", fontWeight: "700"}], "label-sm": ["9px", {lineHeight: "12px", letterSpacing: "0.12em", fontWeight: "700"}], "headline-lg": ["28px", {lineHeight: "32px", letterSpacing: "0.04em", fontWeight: "600"}], "headline-md": ["22px", {lineHeight: "26px", letterSpacing: "0.03em", fontWeight: "600"}], "body-md": ["13px", {lineHeight: "18px", letterSpacing: "0em", fontWeight: "400"}], "headline-xl-mobile": ["30px", {lineHeight: "34px", letterSpacing: "0.05em", fontWeight: "700"}]}}}};</script>
+<style>
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 20px;
+      line-height: 1;
+      display: inline-block;
+      text-transform: none;
+      letter-spacing: normal;
+      word-wrap: normal;
+      white-space: nowrap;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
+    }
+    /* Tactical Scanlines */
+    .tactical-grid {
+      background-size: 24px 24px;
+      background-image: 
+        linear-gradient(to right, rgba(59, 74, 71, 0.15) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(59, 74, 71, 0.15) 1px, transparent 1px);
+    }
+    .hud-glow {
+      box-shadow: 0 0 0 1px #19D3C5, 0 0 10px rgba(25, 211, 197, 0.25);
+    }
+    .sos-glow {
+      box-shadow: 0 0 0 1px #ffb4ab, 0 0 12px rgba(255, 77, 90, 0.35);
+    }
+    .striped-pattern {
+      background-image: repeating-linear-gradient(
+        -45deg,
+        rgba(255, 77, 90, 0.15),
+        rgba(255, 77, 90, 0.15) 8px,
+        transparent 8px,
+        transparent 16px
+      );
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface antialiased font-body-md select-none tactical-grid min-h-screen pb-20">
+<!-- TOP APP BAR (from Shared Components JSON) -->
+<header class="fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-margin py-space-xs w-full bg-surface-container-lowest dark:bg-surface-container-lowest border-b border-outline-variant dark:border-outline-variant">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-headline-sm" data-icon="hub">hub</span>
+<div class="flex flex-col">
+<span class="text-headline-sm font-headline-sm tracking-wider uppercase text-primary dark:text-primary leading-none">RAKSHAVAANI // MESH-SYS</span>
+<span class="text-label-sm font-label-sm text-outline tracking-wider">OFFLINE COMMUNICATION SYSTEM</span>
+</div>
+</div>
+<!-- Secondary Telemetry Pill -->
+<div class="flex items-center gap-space-sm bg-surface-container-low px-space-sm py-space-xs border border-outline-variant">
+<div class="hidden sm:flex items-center gap-space-xs text-label-sm font-label-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-primary" data-icon="battery_charging_full">battery_charging_full</span>
+<span>98% [4.1V]</span>
+</div>
+<div class="hidden sm:block h-3 w-px bg-outline-variant"></div>
+<div class="flex items-center gap-space-xs">
+<span class="w-2 h-2 rounded-none bg-primary animate-ping"></span>
+<span class="text-label-md font-label-md text-primary font-bold">LORA:ACTV</span>
+</div>
+</div>
+</header>
+<!-- MAIN HUD CANVAS -->
+<main class="pt-16 px-margin max-w-7xl mx-auto space-y-space-md mt-space-xs">
+<!-- SUB-HEADER TELEMETRY TICKER -->
+<div class="w-full flex items-center justify-between border border-outline-variant bg-surface-container-low px-space-md py-space-xs text-label-sm font-label-sm text-on-surface-variant overflow-x-auto whitespace-nowrap">
+<div class="flex items-center gap-space-md">
+<span class="flex items-center gap-space-xs text-primary font-bold">
+<span class="material-symbols-outlined" data-icon="satellite_alt">satellite_alt</span>
+          GRID: 19.0760° N, 72.8777° E
+        </span>
+<span class="text-outline">|</span>
+<span>TX PWR: 22 dBm</span>
+<span class="text-outline">|</span>
+<span>HOPS: 03 MAX</span>
+<span class="text-outline">|</span>
+<span>BW: 125 kHz // SF7</span>
+</div>
+<div class="flex items-center gap-space-xs pl-space-md text-secondary">
+<span class="material-symbols-outlined" data-icon="sensors">sensors</span>
+<span>PEERS DETECTED: 07</span>
+</div>
+</div>
+<!-- SYSTEM STATUS HERO (Tactical High-Visibility Banner) -->
+<section class="border border-primary-container bg-surface-container-low p-space-md relative overflow-hidden">
+<!-- Background HUD Tech Accent lines -->
+<div class="absolute -right-6 -bottom-6 text-surface-container-highest/20 pointer-events-none select-none">
+<span class="material-symbols-outlined" data-icon="shield" style="font-size: 140px;">shield</span>
+</div>
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-space-md border-b border-outline-variant pb-space-md">
+<div>
+<div class="flex items-center gap-space-sm mb-space-xs">
+<span class="inline-flex items-center gap-1.5 px-space-sm py-0.5 border border-primary bg-surface-container-high text-primary text-label-md font-label-md">
+<span class="w-2 h-2 bg-primary"></span>
+              P2P AIRGAP PROTOCOL
+            </span>
+<span class="text-label-sm font-label-sm text-outline">SECURE LEVEL 4 // ED25519</span>
+</div>
+<h1 class="text-headline-lg font-headline-lg text-on-surface uppercase tracking-wider flex items-center gap-space-sm">
+            SYSTEM STATUS: <span class="text-primary font-bold">OFFLINE READY</span>
+</h1>
+<p class="text-body-sm font-body-sm text-on-surface-variant max-w-2xl mt-0.5">
+            Decentralized RF relay operational. Zero external internet dependence. On-board NLP vector cache verified for triage synthesis.
+          </p>
+</div>
+<!-- Pulse Badge Module -->
+<div class="flex items-center gap-space-md bg-surface-container px-space-md py-space-sm border border-outline-variant">
+<div class="relative flex items-center justify-center w-8 h-8 bg-surface-container-highest">
+<span class="w-3 h-3 bg-primary"></span>
+<span class="absolute w-6 h-6 border border-primary animate-ping"></span>
+</div>
+<div class="flex flex-col">
+<span class="text-label-sm font-label-sm text-outline">LOCAL RUNTIME</span>
+<span class="text-label-lg font-label-lg text-primary font-bold">NOMINAL // ZERO-DROP</span>
+</div>
+</div>
+</div>
+<!-- COMPACT CONNECTION MATRIX / STATUS STRIP -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-px bg-outline-variant mt-space-md pt-px">
+<!-- Cell 1 -->
+<div class="bg-surface-container-low p-space-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-outline text-label-sm font-label-sm mb-1">
+<span>HARDWARE</span>
+<span class="material-symbols-outlined" data-icon="router">router</span>
+</div>
+<span class="text-label-md font-label-md text-outline">DEVICE CONNECTED:</span>
+<span class="text-body-md font-body-md font-bold text-on-surface">RAKSHA NODE 02</span>
+</div>
+<!-- Cell 2 -->
+<div class="bg-surface-container-low p-space-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-outline text-label-sm font-label-sm mb-1">
+<span>PROTOCOL</span>
+<span class="material-symbols-outlined" data-icon="wifi_tethering">wifi_tethering</span>
+</div>
+<span class="text-label-md font-label-md text-outline">LINK INTERFACE:</span>
+<span class="text-body-md font-body-md font-bold text-secondary">Wi-Fi Direct (5.8 GHz)</span>
+</div>
+<!-- Cell 3 -->
+<div class="bg-surface-container-low p-space-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-outline text-label-sm font-label-sm mb-1">
+<span>RF TELEMETRY</span>
+<span class="material-symbols-outlined" data-icon="signal_cellular_alt">signal_cellular_alt</span>
+</div>
+<span class="text-label-md font-label-md text-outline">SIGNAL STRENGTH:</span>
+<span class="text-body-md font-body-md font-bold text-primary">STABLE [-42 dBm]</span>
+</div>
+<!-- Cell 4 -->
+<div class="bg-surface-container-low p-space-sm flex flex-col justify-between">
+<div class="flex items-center justify-between text-outline text-label-sm font-label-sm mb-1">
+<span>ACCELERATOR</span>
+<span class="material-symbols-outlined text-tertiary" data-icon="memory">memory</span>
+</div>
+<span class="text-label-md font-label-md text-outline">NEURAL PROCESSOR:</span>
+<span class="text-body-md font-body-md font-bold text-tertiary">ON-DEVICE (LOCAL)</span>
+</div>
+</div>
+</section>
+<!-- TACTICAL FIELD ACTION GRID -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-md">
+<!-- LEFT: PRIMARY EMERGENCY MODULE & DISPATCH (7 cols) -->
+<div class="lg:col-span-7 space-y-space-md">
+<!-- 1. Primary Emergency Action Module -->
+<div class="border border-outline-variant bg-surface-container-low p-space-md relative">
+<div class="flex items-center justify-between border-b border-outline-variant pb-space-xs mb-space-md">
+<span class="text-label-sm font-label-sm text-primary uppercase tracking-widest flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary" data-icon="record_voice_over">record_voice_over</span>
+              TACTICAL AUDIO &amp; SYNTHESIS DISPATCH
+            </span>
+<span class="text-label-sm font-label-sm text-outline">CHAN-01 // URGENT</span>
+</div>
+<div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-space-md">
+<div class="space-y-1">
+<h2 class="text-headline-md font-headline-md text-on-surface uppercase">
+                EMERGENCY COMMUNICATION
+              </h2>
+<p class="text-body-sm font-body-sm text-on-surface-variant">
+                Direct Voice STT / TTS Channel &amp; Mesh Dispatch. Translates edge voice packet bursts to quantized text hops across all offline nodes.
+              </p>
+</div>
+</div>
+<!-- Interactive Action Deck -->
+<div class="mt-space-md pt-space-md border-t border-outline-variant grid grid-cols-1 sm:grid-cols-2 gap-space-sm">
+<button class="bg-primary text-surface-container-lowest font-headline-sm uppercase px-space-md py-space-sm flex items-center justify-center gap-space-xs active:scale-95 transition-transform hover:bg-primary-fixed">
+<span class="material-symbols-outlined" data-icon="graphic_eq">graphic_eq</span>
+<span>OPEN VOICE CHANNEL</span>
+</button>
+<button class="border border-secondary text-secondary font-headline-sm uppercase px-space-md py-space-sm flex items-center justify-center gap-space-xs hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined" data-icon="text_to_speech">text_to_speech</span>
+<span>SYNTHESIZE TEXT (TTS)</span>
+</button>
+</div>
+<!-- Real-Time Waveform Monitor Strip -->
+<div class="mt-space-sm bg-surface-container-lowest border border-outline-variant p-space-xs flex items-center justify-between">
+<span class="text-label-sm font-label-sm text-outline pl-space-xs">FREQ: 868.10 MHz</span>
+<div class="flex items-center gap-0.5 h-4">
+<div class="w-1 bg-primary h-2"></div>
+<div class="w-1 bg-primary h-4"></div>
+<div class="w-1 bg-primary h-1"></div>
+<div class="w-1 bg-primary h-3"></div>
+<div class="w-1 bg-primary h-2"></div>
+<div class="w-1 bg-outline-variant h-1"></div>
+<div class="w-1 bg-outline-variant h-1"></div>
+<div class="w-1 bg-primary h-3"></div>
+<div class="w-1 bg-primary h-4"></div>
+<div class="w-1 bg-primary h-1"></div>
+</div>
+<span class="text-label-sm font-label-sm text-primary font-bold pr-space-xs">SPECTRUM CLEAR</span>
+</div>
+</div>
+<!-- 2. Quick Voice Dispatch & Audio Queue -->
+<div class="border border-outline-variant bg-surface-container-low p-space-md">
+<div class="flex items-center justify-between border-b border-outline-variant pb-space-xs mb-space-sm">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-tertiary" data-icon="mic">mic</span>
+<span class="text-headline-sm font-headline-sm text-on-surface uppercase">VOICE MESSAGES // PUSH-TO-TRANSMIT</span>
+</div>
+<span class="text-label-sm font-label-sm text-tertiary bg-surface-container px-space-xs border border-outline-variant">QUEUE: 02 PENDING</span>
+</div>
+<!-- Push-to-Talk Interactive Console -->
+<div class="bg-surface-container p-space-md border border-outline-variant flex flex-col sm:flex-row items-center justify-between gap-space-md">
+<div class="flex items-center gap-space-md">
+<button class="w-14 h-14 bg-surface-container-highest border-2 border-primary text-primary flex items-center justify-center active:bg-primary active:text-surface-container-lowest transition-colors">
+<span class="material-symbols-outlined" data-icon="mic_none" style="font-size: 28px;">mic_none</span>
+</button>
+<div>
+<span class="text-label-md font-label-md text-on-surface uppercase block font-bold">PTT READY // HOLD KEYLINE</span>
+<span class="text-body-sm font-body-sm text-outline">Max 12s uncompressed compressed burst</span>
+</div>
+</div>
+<div class="text-right flex flex-col items-end">
+<span class="text-headline-sm font-headline-sm text-primary">00:00:00</span>
+<span class="text-label-sm font-label-sm text-outline">BUFFER: 100% EMPTY</span>
+</div>
+</div>
+<!-- Audio Outbox Queue -->
+<div class="mt-space-sm space-y-1">
+<div class="flex items-center justify-between bg-surface-container-lowest px-space-sm py-space-xs border border-outline-variant text-body-sm font-body-sm">
+<div class="flex items-center gap-space-xs">
+<span class="w-1.5 h-1.5 bg-primary"></span>
+<span class="text-on-surface font-bold">MSG_0911_ALPHA.aac</span>
+<span class="text-outline">[0:04s]</span>
+</div>
+<div class="flex items-center gap-space-sm">
+<span class="text-label-sm font-label-sm text-secondary">HOPPED VIA NODE_04</span>
+<span class="text-label-sm font-label-sm text-primary">SENT</span>
+</div>
+</div>
+<div class="flex items-center justify-between bg-surface-container-lowest px-space-sm py-space-xs border border-outline-variant text-body-sm font-body-sm">
+<div class="flex items-center gap-space-xs">
+<span class="w-1.5 h-1.5 bg-tertiary"></span>
+<span class="text-on-surface font-bold">MSG_0912_SECTOR3.aac</span>
+<span class="text-outline">[0:08s]</span>
+</div>
+<div class="flex items-center gap-space-sm">
+<span class="text-label-sm font-label-sm text-tertiary animate-pulse">TRANSMITTING [68%]</span>
+<span class="material-symbols-outlined text-outline" data-icon="sync">sync</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- RIGHT: CARRIER TELEMETRY & NETWORK TOPOLOGY (5 cols) -->
+<div class="lg:col-span-5 space-y-space-md">
+<!-- 3. Link Interface Quick Status -->
+<div class="border border-outline-variant bg-surface-container-low p-space-md">
+<div class="flex items-center justify-between border-b border-outline-variant pb-space-xs mb-space-sm">
+<span class="text-headline-sm font-headline-sm text-on-surface uppercase flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary" data-icon="settings_input_antenna">settings_input_antenna</span>
+              CARRIER TELEMETRY
+            </span>
+<span class="text-label-sm font-label-sm text-secondary border border-secondary px-space-xs">DIRECT LINK</span>
+</div>
+<div class="space-y-space-sm">
+<div class="flex justify-between items-center text-body-sm font-body-sm">
+<span class="text-outline">ACTIVE CARRIER:</span>
+<span class="text-on-surface font-bold uppercase">WI-FI DIRECT (WPA3-P2P)</span>
+</div>
+<div class="flex justify-between items-center text-body-sm font-body-sm">
+<span class="text-outline">PING ROUND-TRIP:</span>
+<span class="text-primary font-bold">4.2 ms [LOW JITTER]</span>
+</div>
+<div class="flex justify-between items-center text-body-sm font-body-sm">
+<span class="text-outline">PACKET LOSS:</span>
+<span class="text-on-surface font-bold">0.00% (LAST 500 PKTS)</span>
+</div>
+<div class="flex justify-between items-center text-body-sm font-body-sm">
+<span class="text-outline">THROUGHPUT:</span>
+<span class="text-secondary font-bold">14.8 Mbps BURST</span>
+</div>
+<!-- Signal Bar Graph Visualizer -->
+<div class="pt-space-xs">
+<div class="flex justify-between text-label-sm font-label-sm text-outline mb-1">
+<span>RSSI STABILITY PROFILE</span>
+<span class="text-primary">-42 dBm CONSTANT</span>
+</div>
+<div class="w-full bg-surface-container-lowest h-2 flex gap-0.5">
+<div class="bg-primary flex-1"></div>
+<div class="bg-primary flex-1"></div>
+<div class="bg-primary flex-1"></div>
+<div class="bg-primary flex-1"></div>
+<div class="bg-primary flex-1"></div>
+<div class="bg-primary flex-1"></div>
+<div class="bg-primary flex-1"></div>
+<div class="bg-outline-variant flex-1"></div>
+</div>
+</div>
+</div>
+<div class="mt-space-md pt-space-sm border-t border-outline-variant flex justify-between">
+<button class="text-label-md font-label-md uppercase text-secondary border border-outline-variant px-space-sm py-space-xs hover:border-secondary transition-colors">
+              RE-SCAN CHANNELS
+            </button>
+<button class="text-label-md font-label-md uppercase text-outline hover:text-primary transition-colors flex items-center gap-1">
+<span>VIEW LOGS</span>
+<span class="material-symbols-outlined" data-icon="terminal">terminal</span>
+</button>
+</div>
+</div>
+<!-- Edge Mesh Route Visualizer Card -->
+<div class="border border-outline-variant bg-surface-container-low p-space-md">
+<div class="flex items-center justify-between border-b border-outline-variant pb-space-xs mb-space-sm">
+<span class="text-headline-sm font-headline-sm text-on-surface uppercase flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary" data-icon="device_hub">device_hub</span>
+              ACTIVE ROUTING TOPOLOGY
+            </span>
+<span class="text-label-sm font-label-sm text-primary">3-NODE CLUSTER</span>
+</div>
+<div class="space-y-space-xs">
+<div class="p-space-xs bg-surface-container-lowest border border-primary/40 flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="w-2 h-2 bg-primary"></span>
+<span class="text-body-sm font-body-sm text-on-surface font-bold">NODE_02 (HOST / THIS UNIT)</span>
+</div>
+<span class="text-label-sm font-label-sm text-primary">ROOT</span>
+</div>
+<div class="pl-4 border-l border-outline-variant space-y-space-xs">
+<div class="p-space-xs bg-surface-container-lowest border border-outline-variant flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="w-2 h-2 bg-secondary"></span>
+<span class="text-body-sm font-body-sm text-on-surface">NODE_04 (RELAY - RELIEF HQ)</span>
+</div>
+<span class="text-label-sm font-label-sm text-outline">1 HOP</span>
+</div>
+<div class="p-space-xs bg-surface-container-lowest border border-outline-variant flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="w-2 h-2 bg-secondary"></span>
+<span class="text-body-sm font-body-sm text-on-surface">NODE_07 (MOBILE MEDIC SLATE)</span>
+</div>
+<span class="text-label-sm font-label-sm text-outline">2 HOPS</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- 4. DEDICATED SEMANTIC SOS MODULE (Restrained Tactical Emergency Module) -->
+<section class="border-2 border-error/80 bg-surface-container-low p-space-md relative overflow-hidden">
+<!-- High Visibility Pattern Trim -->
+<div class="absolute inset-0 striped-pattern pointer-events-none opacity-40"></div>
+<div class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-space-md">
+<div class="space-y-1 text-center md:text-left">
+<div class="flex items-center justify-center md:justify-start gap-space-xs">
+<span class="w-2.5 h-2.5 bg-error animate-ping"></span>
+<span class="text-label-md font-label-md text-error tracking-widest font-bold">TACTICAL DISTRESS BEACON // MIL-STD CHANNEL</span>
+</div>
+<h2 class="text-headline-md font-headline-md text-on-surface uppercase">
+            FAIL-SAFE EMERGENCY SOS BROADCAST
+          </h2>
+<p class="text-body-sm font-body-sm text-on-surface-variant max-w-xl">
+            Transmits high-priority packet storm including GPS coordinate lock, battery status, and automated distress chirp via all RF carrier interfaces simultaneously.
+          </p>
+</div>
+<!-- Restrained High-Contrast Hold-to-Confirm Trigger -->
+<div class="w-full md:w-auto flex flex-col items-center">
+<button class="w-full md:w-80 bg-error hover:bg-error-container text-on-error font-headline-lg uppercase py-space-md px-space-lg flex items-center justify-center gap-space-sm transition-all duration-75 active:scale-95 border-2 border-white select-none" id="sosTrigger">
+<span class="material-symbols-outlined text-white" data-icon="emergency" style="font-size: 26px;">emergency</span>
+<span class="tracking-wider">HOLD 2s // SOS DISTRESS</span>
+</button>
+<div class="w-full md:w-80 mt-1 flex justify-between items-center text-label-sm font-label-sm text-error">
+<span>ENGAGES ALL NODES</span>
+<span>AUTO-ENCRYPTION BYPASS</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BOTTOM NAVIGATION CONSOLE (from Shared Components JSON) -->
+<!-- Active Tab semantic match: "DASH" -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-gutter py-space-xs bg-surface-container-lowest dark:bg-surface-container-lowest border-t border-outline-variant dark:border-outline-variant">
+<!-- Item 1: DASH (Active) -->
+<a class="flex flex-col items-center justify-center bg-surface-container-high dark:bg-surface-container-high text-primary dark:text-primary border border-primary dark:border-primary px-space-sm py-space-xs active:scale-95 transition-transform duration-75" href="#">
+<span class="material-symbols-outlined" data-icon="grid_view">grid_view</span>
+<span class="text-label-sm font-label-sm mt-0.5">DASH</span>
+</a>
+<!-- Item 2: EMERGENCY -->
+<a class="flex flex-col items-center justify-center text-outline dark:text-outline px-space-sm py-space-xs active:scale-95 transition-transform duration-75 hover:bg-surface-container hover:text-primary" href="#">
+<span class="material-symbols-outlined" data-icon="emergency">emergency</span>
+<span class="text-label-sm font-label-sm mt-0.5">EMERGENCY</span>
+</a>
+<!-- Item 3: LINK -->
+<a class="flex flex-col items-center justify-center text-outline dark:text-outline px-space-sm py-space-xs active:scale-95 transition-transform duration-75 hover:bg-surface-container hover:text-primary" href="#">
+<span class="material-symbols-outlined" data-icon="settings_input_antenna">settings_input_antenna</span>
+<span class="text-label-sm font-label-sm mt-0.5">LINK</span>
+</a>
+<!-- Item 4: AI ENGINE -->
+<a class="flex flex-col items-center justify-center text-outline dark:text-outline px-space-sm py-space-xs active:scale-95 transition-transform duration-75 hover:bg-surface-container hover:text-primary" href="#">
+<span class="material-symbols-outlined" data-icon="memory">memory</span>
+<span class="text-label-sm font-label-sm mt-0.5">AI ENGINE</span>
+</a>
+<!-- Item 5: CONTROL -->
+<a class="flex flex-col items-center justify-center text-outline dark:text-outline px-space-sm py-space-xs active:scale-95 transition-transform duration-75 hover:bg-surface-container hover:text-primary" href="#">
+<span class="material-symbols-outlined" data-icon="tune">tune</span>
+<span class="text-label-sm font-label-sm mt-0.5">CONTROL</span>
+</a>
+</nav>
+<!-- Interactive Telemetry Countdown Script for SOS button -->
+<script>
+    const sosBtn = document.getElementById('sosTrigger');
+    let timer = null;
+    let holdDuration = 2000;
+    let startTime = 0;
+
+    sosBtn.addEventListener('mousedown', startHold);
+    sosBtn.addEventListener('touchstart', startHold);
+
+    sosBtn.addEventListener('mouseup', cancelHold);
+    sosBtn.addEventListener('mouseleave', cancelHold);
+    sosBtn.addEventListener('touchend', cancelHold);
+
+    function startHold(e) {
+      startTime = Date.now();
+      sosBtn.classList.add('brightness-125');
+      timer = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(100, Math.floor((elapsed / holdDuration) * 100));
+        sosBtn.querySelector('span:last-child').textContent = `HOLDING... ${progress}%`;
+        if (elapsed >= holdDuration) {
+          clearInterval(timer);
+          triggerDistress();
+        }
+      }, 50);
+    }
+
+    function cancelHold() {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+      }
+      sosBtn.classList.remove('brightness-125');
+      sosBtn.querySelector('span:last-child').textContent = 'HOLD 2s // SOS DISTRESS';
+    }
+
+    function triggerDistress() {
+      sosBtn.classList.add('bg-white', 'text-error');
+      sosBtn.querySelector('span:last-child').textContent = 'DISTRESS BROADCASTING';
+      alert('TACTICAL SOS DISPATCHED: Distress beacon packet repeated across Wi-Fi Direct and LoRa 868MHz channels.');
+      setTimeout(cancelHold, 3000);
+    }
+  </script>
+</body></html>

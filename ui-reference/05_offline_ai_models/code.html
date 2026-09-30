@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+
+<html class="" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>RakshaVaani // Offline AI Models</title>
+<!-- Google Fonts: Barlow Condensed & JetBrains Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {"on-secondary-container": "#003c64", "on-primary-fixed": "#00201d", primary: "#006a63", "surface-container-lowest": "#ffffff", "primary-fixed": "#5afaeb", error: "#ba1a1a", outline: "#6b7a77", "on-secondary": "#ffffff", "on-secondary-fixed": "#001d34", "surface-dim": "#cfdbec", "inverse-on-surface": "#e9f1ff", "tertiary-container": "#f8af41", "error-container": "#ffdad6", "surface-container": "#e4efff", "on-surface": "#111c29", "surface-tint": "#006a63", "on-primary-container": "#005650", "on-primary": "#ffffff", "secondary-fixed": "#cfe4ff", "on-tertiary": "#ffffff", secondary: "#00629f", "inverse-primary": "#30ddce", "outline-variant": "#bacac7", surface: "#f8f9ff", tertiary: "#835500", "on-error": "#ffffff", "on-error-container": "#93000a", "on-tertiary-fixed": "#291800", "surface-container-high": "#dde9fb", "on-tertiary-container": "#6b4400", "on-surface-variant": "#3b4a47", "primary-fixed-dim": "#30ddce", background: "#f8f9ff", "secondary-container": "#3fa9ff", "tertiary-fixed-dim": "#ffb955", "surface-container-highest": "#d7e3f5", "surface-container-low": "#eef4ff", "on-secondary-fixed-variant": "#004a79", "surface-variant": "#d7e3f5", "tertiary-fixed": "#ffddb4", "inverse-surface": "#26313e", "secondary-fixed-dim": "#9acbff", "on-background": "#111c29", "surface-bright": "#f8f9ff", "on-primary-fixed-variant": "#00504a", "on-tertiary-fixed-variant": "#633f00", "primary-container": "#19d3c5"}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}, spacing: {"space-xl": "1.5rem", "margin-desktop": "1.5rem", "gutter-desktop": "1rem", "gutter-tablet": "0.75rem", "space-lg": "1rem", "margin-tablet": "1rem", "space-sm": "0.5rem", "space-md": "0.75rem", margin: "0.75rem", gutter: "0.5rem", "space-xs": "0.25rem"}, fontFamily: {"headline-sm": ["Barlow Condensed"], "body-sm": ["JetBrains Mono"], "label-md": ["JetBrains Mono"], "label-lg": ["JetBrains Mono"], "body-lg": ["JetBrains Mono"], "headline-xl": ["Barlow Condensed"], "label-sm": ["JetBrains Mono"], "headline-lg": ["Barlow Condensed"], "headline-md": ["Barlow Condensed"], "body-md": ["JetBrains Mono"], "headline-xl-mobile": ["Barlow Condensed"], headline: ["Barlow Condensed"], display: ["Barlow Condensed"], body: ["JetBrains Mono"], label: ["JetBrains Mono"]}, fontSize: {"headline-sm": ["18px", {lineHeight: "22px", letterSpacing: "0.02em", fontWeight: "600"}], "body-sm": ["11px", {lineHeight: "16px", letterSpacing: "0.01em", fontWeight: "400"}], "label-md": ["10px", {lineHeight: "14px", letterSpacing: "0.1em", fontWeight: "600"}], "label-lg": ["12px", {lineHeight: "16px", letterSpacing: "0.08em", fontWeight: "600"}], "body-lg": ["15px", {lineHeight: "22px", letterSpacing: "-0.01em", fontWeight: "400"}], "headline-xl": ["40px", {lineHeight: "44px", letterSpacing: "0.05em", fontWeight: "700"}], "label-sm": ["9px", {lineHeight: "12px", letterSpacing: "0.12em", fontWeight: "700"}], "headline-lg": ["28px", {lineHeight: "32px", letterSpacing: "0.04em", fontWeight: "600"}], "headline-md": ["22px", {lineHeight: "26px", letterSpacing: "0.03em", fontWeight: "600"}], "body-md": ["13px", {lineHeight: "18px", letterSpacing: "0em", fontWeight: "400"}], "headline-xl-mobile": ["30px", {lineHeight: "34px", letterSpacing: "0.05em", fontWeight: "700"}]}}}};</script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    /* Cut-corner chamfer styling */
+    .tactical-chamfer {
+      clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+    }
+    .tactical-grid-pattern {
+      background-size: 24px 24px;
+      background-image: 
+        linear-gradient(to right, rgba(59, 74, 71, 0.15) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(59, 74, 71, 0.15) 1px, transparent 1px);
+    }
+    /* Custom scanline tick marks */
+    .corner-brackets {
+      position: relative;
+    }
+    .corner-brackets::before {
+      content: '+';
+      position: absolute;
+      top: -2px;
+      left: 2px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: #4df0e1;
+      opacity: 0.5;
+    }
+    .corner-brackets::after {
+      content: '+';
+      position: absolute;
+      top: -2px;
+      right: 2px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: #4df0e1;
+      opacity: 0.5;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface min-h-screen font-body-md antialiased tactical-grid-pattern pb-24">
+<!-- TOP APP BAR (from Shared Components JSON) -->
+<header class="fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-margin py-space-xs w-full bg-surface-container-lowest border-b border-outline-variant">
+<div class="flex items-center space-x-2">
+<span class="material-symbols-outlined text-primary" data-icon="hub">hub</span>
+<span class="text-headline-sm font-headline-sm tracking-wider uppercase text-primary">RAKSHAVAANI // MESH-SYS</span>
+</div>
+<div class="flex items-center space-x-3">
+<span class="inline-flex items-center px-1.5 py-0.5 bg-surface-container-low border border-primary text-primary font-label-sm text-label-sm tracking-widest">
+<span class="w-1.5 h-1.5 bg-primary mr-1.5 animate-pulse"></span>
+        LORA:ACTV
+      </span>
+</div>
+</header>
+<!-- MAIN VIEWPORT CONTAINER -->
+<main class="pt-16 max-w-5xl mx-auto px-margin md:px-margin-desktop space-y-space-md">
+<!-- SUB-HEADER / HUD VIEW TITLE -->
+<div class="border-b border-outline-variant pb-space-sm pt-2 flex flex-col md:flex-row md:items-end justify-between gap-2">
+<div>
+<div class="flex items-center space-x-2">
+<span class="w-2 h-2 bg-primary"></span>
+<p class="font-label-sm text-label-sm text-primary tracking-widest uppercase">HUD DIRECTORY // SYS_MODELS_05</p>
+</div>
+<h1 class="font-headline-lg text-headline-lg md:font-headline-xl md:text-headline-xl text-on-surface uppercase tracking-wider mt-0.5">
+          OFFLINE AI
+        </h1>
+<p class="font-label-md text-label-md text-outline tracking-wider uppercase">
+          ON-DEVICE LANGUAGE ENGINES // AIR-GAPPED SUBSYSTEM
+        </p>
+</div>
+<!-- Telemetry Badge Cluster -->
+<div class="flex flex-wrap gap-2 text-right items-center">
+<div class="px-2 py-1 bg-surface-container-low border border-outline-variant">
+<span class="font-label-sm text-label-sm text-outline block">NPU ACCELERATION</span>
+<span class="font-label-md text-label-md text-primary font-bold">QUALCOMM_HEXAGON // INT8</span>
+</div>
+<div class="px-2 py-1 bg-surface-container-low border border-outline-variant">
+<span class="font-label-sm text-label-sm text-outline block">NETWORK AIR-GAP</span>
+<span class="font-label-md text-label-md text-primary-fixed-dim font-bold">STRICT_ISOLATION</span>
+</div>
+</div>
+</div>
+<!-- STORAGE DIAGNOSTICS MODULE (Top Bar) -->
+<section class="bg-surface-container-low border border-outline-variant p-space-md corner-brackets">
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 mb-space-sm">
+<div class="flex items-center space-x-2">
+<span class="material-symbols-outlined text-primary text-base" data-icon="hard_drive">memory</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface uppercase tracking-wide">
+            LOCAL STORAGE TELEMETRY &amp; NAND ALLOCATION
+          </h2>
+</div>
+<div class="flex items-center space-x-4 font-label-md text-label-md">
+<span class="text-outline">AVAIL: <strong class="text-primary font-bold">2.8 GB</strong></span>
+<span class="text-outline-variant">|</span>
+<span class="text-outline">ALLOCATED: <strong class="text-on-surface font-bold">524 MB / 3.0 GB</strong></span>
+</div>
+</div>
+<!-- Segmented Hardware Style Gauge -->
+<div class="space-y-1.5">
+<div class="w-full bg-surface-container-lowest h-3 p-0.5 border border-outline-variant flex items-center">
+<div class="h-full bg-primary" style="width: 17.5%;"></div>
+<div class="h-full bg-tertiary-container animate-pulse" style="width: 8.7%;"></div>
+<div class="h-full bg-surface-container-highest" style="width: 73.8%;"></div>
+</div>
+<div class="flex justify-between font-label-sm text-label-sm text-outline">
+<div class="flex items-center space-x-3">
+<span class="flex items-center"><span class="w-2 h-2 bg-primary inline-block mr-1"></span>ACTIVE (524 MB)</span>
+<span class="flex items-center"><span class="w-2 h-2 bg-tertiary-container inline-block mr-1"></span>STAGING (261 MB)</span>
+<span class="flex items-center"><span class="w-2 h-2 bg-surface-container-highest inline-block mr-1"></span>RESERVED FLASH</span>
+</div>
+<span>SLOT_0 // BLOCK_SECTOR_EXT4</span>
+</div>
+</div>
+<!-- Core Engine Status Line -->
+<div class="mt-space-md pt-space-xs border-t border-outline-variant/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+<div class="flex items-center space-x-2 font-label-md text-label-md text-on-surface">
+<span class="inline-block w-2 h-2 bg-primary"></span>
+<span class="text-outline">CORE INFERENCE RUNTIME:</span>
+<span class="text-primary font-bold">LOCAL PIPER TTS &amp; VOSK STT ENGINE: ACTIVE (ZERO CLOUD)</span>
+</div>
+<div class="font-label-sm text-label-sm text-outline-variant">
+          REV: 2.4.1-MIL-EDGE
+        </div>
+</div>
+</section>
+<!-- LANGUAGE PACKS LIST: Tactical Technical Rows -->
+<section class="space-y-space-sm">
+<div class="flex items-center justify-between border-b border-outline-variant pb-1">
+<div class="flex items-center space-x-2">
+<span class="material-symbols-outlined text-outline text-sm" data-icon="translate">translate</span>
+<span class="font-headline-sm text-headline-sm text-on-surface tracking-wider uppercase">
+            SYNCHRONIZED VOICE CODECS &amp; LEXICONS
+          </span>
+</div>
+<span class="font-label-sm text-label-sm text-outline">TOTAL IDENTIFIED: 5 ENGINES</span>
+</div>
+<!-- ROW 1: ENGLISH STT + TTS (INSTALLED & ACTIVE) -->
+<article class="bg-surface-container-low border border-outline-variant hover:border-primary transition-colors duration-100 p-space-md flex flex-col md:flex-row md:items-center justify-between gap-space-md relative">
+<div class="space-y-1">
+<div class="flex flex-wrap items-center gap-2">
+<span class="font-headline-md text-headline-md tracking-wider text-on-surface uppercase">ENGLISH STT + TTS</span>
+<span class="px-1.5 py-0.5 bg-surface-container-lowest border border-outline-variant font-label-sm text-label-sm text-outline">en-US // GBN</span>
+<span class="px-1.5 py-0.5 bg-surface-container-lowest border border-primary text-primary font-label-sm text-label-sm font-bold flex items-center">
+<span class="material-symbols-outlined text-xs mr-1" data-icon="check_circle">check_circle</span>
+              READY OFFLINE
+            </span>
+</div>
+<div class="font-label-sm text-label-sm text-outline flex flex-wrap gap-x-4 gap-y-1">
+<span>FOOTPRINT: <strong class="text-on-surface">238 MB</strong></span>
+<span>STATUS: <strong class="text-primary">INSTALLED &amp; ACTIVE</strong></span>
+<span class="text-on-surface-variant">18ms inference // Acoustic Model: Tiny-En</span>
+</div>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<button class="px-3 py-1.5 bg-transparent border border-secondary text-secondary font-headline-sm text-headline-sm uppercase tracking-wider hover:bg-secondary hover:text-on-secondary transition-colors duration-75">
+            VERIFY INTEGRITY
+          </button>
+<button class="px-3 py-1.5 bg-surface-container-high border border-outline-variant text-on-surface font-headline-sm text-headline-sm uppercase tracking-wider hover:border-primary hover:text-primary transition-colors duration-75">
+            MANAGE
+          </button>
+</div>
+</article>
+<!-- ROW 2: HINDI STT + TTS (DOWNLOADING / INSTALLING) -->
+<article class="bg-surface-container border border-tertiary-container p-space-md flex flex-col gap-space-sm relative">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-2">
+<div class="space-y-1">
+<div class="flex flex-wrap items-center gap-2">
+<span class="font-headline-md text-headline-md tracking-wider text-on-surface uppercase">HINDI STT + TTS (हिन्दी)</span>
+<span class="px-1.5 py-0.5 bg-surface-container-lowest border border-outline-variant font-label-sm text-label-sm text-outline">hi-IN // DEV</span>
+<span class="px-1.5 py-0.5 bg-tertiary-container/10 border border-tertiary-container text-tertiary-container font-label-sm text-label-sm font-bold flex items-center">
+<span class="w-1.5 h-1.5 bg-tertiary-container mr-1.5 animate-ping"></span>
+                DOWNLOADING / INSTALLING
+              </span>
+</div>
+<div class="font-label-sm text-label-sm text-outline flex flex-wrap gap-x-4">
+<span>TARGET ALLOC: <strong class="text-on-surface">261 MB</strong></span>
+<span>TRANSPORT: <strong class="text-tertiary-container">LORA PACKET HOPPING + LOCAL P2P</strong></span>
+</div>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<button class="px-4 py-1.5 bg-surface-container-lowest border border-tertiary text-tertiary font-headline-sm text-headline-sm uppercase tracking-wider hover:bg-tertiary hover:text-on-tertiary transition-colors duration-75">
+              PAUSE
+            </button>
+</div>
+</div>
+<!-- Download Progress Bar & P2P Stream Status -->
+<div class="bg-surface-container-lowest border border-outline-variant p-2 space-y-1.5">
+<div class="flex justify-between font-label-sm text-label-sm">
+<span class="text-on-surface">PROGRESS: 174.6 / 261 MB (67%)</span>
+<span class="text-primary font-bold">Transfer Rate: 4.2 MB/s P2P</span>
+</div>
+<div class="w-full bg-surface-container-high h-2 border border-outline-variant/60 overflow-hidden">
+<div class="bg-tertiary-container h-full transition-all duration-300" style="width: 67%;"></div>
+</div>
+<div class="flex justify-between font-label-sm text-label-sm text-outline">
+<span>PEER_SEED: NODE_BRAVO_04</span>
+<span>CHUNK_VERIFIED: 1,396 / 2,088</span>
+</div>
+</div>
+</article>
+<!-- ROW 3: TELUGU STT + TTS (INSTALLED & ACTIVE) -->
+<article class="bg-surface-container-low border border-outline-variant hover:border-primary transition-colors duration-100 p-space-md flex flex-col md:flex-row md:items-center justify-between gap-space-md relative">
+<div class="space-y-1">
+<div class="flex flex-wrap items-center gap-2">
+<span class="font-headline-md text-headline-md tracking-wider text-on-surface uppercase">TELUGU STT + TTS (తెలుగు)</span>
+<span class="px-1.5 py-0.5 bg-surface-container-lowest border border-outline-variant font-label-sm text-label-sm text-outline">te-IN // DRAV</span>
+<span class="px-1.5 py-0.5 bg-surface-container-lowest border border-primary text-primary font-label-sm text-label-sm font-bold flex items-center">
+<span class="material-symbols-outlined text-xs mr-1" data-icon="verified">verified</span>
+              INSTALLED &amp; ACTIVE
+            </span>
+</div>
+<div class="font-label-sm text-label-sm text-outline flex flex-wrap gap-x-4">
+<span>SIZE: <strong class="text-on-surface">261 MB</strong></span>
+<span>INTEGRITY: <strong class="text-primary">SHA256_VERIFIED</strong></span>
+<span class="text-on-surface-variant">Ready for field use // Acoustic Model: Mel-Tel</span>
+</div>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<button class="px-4 py-1.5 bg-surface-container-high border border-primary text-primary font-headline-sm text-headline-sm uppercase tracking-wider hover:bg-primary hover:text-on-primary transition-colors duration-75 flex items-center space-x-1">
+<span class="material-symbols-outlined text-sm" data-icon="check">check</span>
+<span>READY OFFLINE</span>
+</button>
+</div>
+</article>
+<!-- ROW 4: TAMIL STT + TTS (AVAILABLE FOR LOCAL SYNC) -->
+<article class="bg-surface-container-low border border-outline-variant hover:border-primary/80 transition-colors duration-100 p-space-md flex flex-col md:flex-row md:items-center justify-between gap-space-md relative">
+<div class="space-y-1">
+<div class="flex flex-wrap items-center gap-2">
+<span class="font-headline-md text-headline-md tracking-wider text-on-surface uppercase">TAMIL STT + TTS (தமிழ்)</span>
+<span class="px-1.5 py-0.5 bg-surface-container-lowest border border-outline-variant font-label-sm text-label-sm text-outline">ta-IN // ARCH</span>
+<span class="px-1.5 py-0.5 bg-surface-container-lowest border border-outline text-outline font-label-sm text-label-sm">
+              AVAILABLE FOR LOCAL SYNC
+            </span>
+</div>
+<div class="font-label-sm text-label-sm text-outline flex flex-wrap gap-x-4">
+<span>PACKAGE SIZE: <strong class="text-on-surface">254 MB</strong></span>
+<span>PEER REPOSITORY: <strong class="text-secondary">MESH RELAY SECTOR 9</strong></span>
+</div>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<button class="tactical-chamfer px-4 py-2 bg-primary text-on-primary font-headline-sm text-headline-sm font-bold uppercase tracking-wider hover:bg-primary-fixed hover:text-on-primary-fixed transition-colors duration-75 shadow-[0_0_12px_rgba(25,211,197,0.35)] flex items-center space-x-1.5">
+<span class="material-symbols-outlined text-base" data-icon="download">download</span>
+<span>DOWNLOAD &amp; INSTALL // 254 MB</span>
+</button>
+</div>
+</article>
+<!-- ROW 5: BENGALI STT + TTS (AVAILABLE) -->
+<article class="bg-surface-container-low border border-outline-variant hover:border-outline transition-colors duration-100 p-space-md flex flex-col md:flex-row md:items-center justify-between gap-space-md relative">
+<div class="space-y-1">
+<div class="flex flex-wrap items-center gap-2">
+<span class="font-headline-md text-headline-md tracking-wider text-on-surface uppercase">BENGALI STT + TTS (বাংলা)</span>
+<span class="px-1.5 py-0.5 bg-surface-container-lowest border border-outline-variant font-label-sm text-label-sm text-outline">bn-IN // INDO</span>
+<span class="px-1.5 py-0.5 bg-surface-container-lowest border border-outline text-outline font-label-sm text-label-sm">
+              AVAILABLE
+            </span>
+</div>
+<div class="font-label-sm text-label-sm text-outline flex flex-wrap gap-x-4">
+<span>PACKAGE SIZE: <strong class="text-on-surface">270 MB</strong></span>
+<span>SOURCE: <strong class="text-outline">CACHE SLATE 02</strong></span>
+</div>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<button class="px-4 py-1.5 bg-transparent border border-outline text-on-surface font-headline-sm text-headline-sm uppercase tracking-wider hover:border-primary hover:text-primary transition-colors duration-75 flex items-center space-x-1">
+<span class="material-symbols-outlined text-sm" data-icon="file_download">file_download</span>
+<span>DOWNLOAD &amp; INSTALL</span>
+</button>
+</div>
+</article>
+</section>
+<!-- MIL-SPEC MANDATE FOOTER NOTE -->
+<div class="border border-outline-variant bg-surface-container-lowest p-space-sm flex items-start space-x-3">
+<span class="material-symbols-outlined text-primary text-lg shrink-0 mt-0.5" data-icon="security">security</span>
+<p class="font-label-sm text-label-sm text-on-surface-variant tracking-wider uppercase leading-relaxed">
+        ALL MODELS RUN 100% LOCALLY ON DEVICE NPU/CPU. NO TELEMETRY OR INTERNET REQUIRED. ZERO CLOUD DEPENDENCY CONFIRMED BY HARDWARE ENCLAVE.
+      </p>
+</div>
+</main>
+<!-- BOTTOM NAVIGATION BAR (from Shared Components JSON: AI ENGINE is active) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-gutter py-space-xs bg-surface-container-lowest border-t border-outline-variant">
+<!-- DASH (Inactive) -->
+<a class="flex flex-col items-center justify-center text-outline px-space-sm py-space-xs hover:bg-surface-container hover:text-primary active:scale-95 transition-all duration-75" href="#dash">
+<span class="material-symbols-outlined text-lg" data-icon="grid_view">grid_view</span>
+<span class="font-label-sm text-label-sm mt-0.5">DASH</span>
+</a>
+<!-- EMERGENCY (Inactive) -->
+<a class="flex flex-col items-center justify-center text-outline px-space-sm py-space-xs hover:bg-surface-container hover:text-primary active:scale-95 transition-all duration-75" href="#emergency">
+<span class="material-symbols-outlined text-lg text-error" data-icon="emergency">emergency</span>
+<span class="font-label-sm text-label-sm mt-0.5 text-error">EMERGENCY</span>
+</a>
+<!-- LINK (Inactive) -->
+<a class="flex flex-col items-center justify-center text-outline px-space-sm py-space-xs hover:bg-surface-container hover:text-primary active:scale-95 transition-all duration-75" href="#link">
+<span class="material-symbols-outlined text-lg" data-icon="settings_input_antenna">settings_input_antenna</span>
+<span class="font-label-sm text-label-sm mt-0.5">LINK</span>
+</a>
+<!-- AI ENGINE (ACTIVE TARGET MATCHING PAGE INTENT) -->
+<a class="flex flex-col items-center justify-center bg-surface-container-high text-primary border border-primary px-space-sm py-space-xs active:scale-95 transition-all duration-75" href="#ai-engine">
+<span class="material-symbols-outlined text-lg" data-icon="memory">memory</span>
+<span class="font-label-sm text-label-sm mt-0.5 font-bold">AI ENGINE</span>
+</a>
+<!-- CONTROL (Inactive) -->
+<a class="flex flex-col items-center justify-center text-outline px-space-sm py-space-xs hover:bg-surface-container hover:text-primary active:scale-95 transition-all duration-75" href="#control">
+<span class="material-symbols-outlined text-lg" data-icon="tune">tune</span>
+<span class="font-label-sm text-label-sm mt-0.5">CONTROL</span>
+</a>
+</nav>
+</body></html>
