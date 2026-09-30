@@ -94,9 +94,9 @@ internal fun MessageBubble(
         }
     val shape =
         if (mine) {
-            RoundedCornerShape(18.dp, 18.dp, 5.dp, 18.dp)
+            RoundedCornerShape(Tokens.RadiusControl, Tokens.RadiusControl, Tokens.RadiusInset, Tokens.RadiusControl)
         } else {
-            RoundedCornerShape(18.dp, 18.dp, 18.dp, 5.dp)
+            RoundedCornerShape(Tokens.RadiusControl, Tokens.RadiusControl, Tokens.RadiusControl, Tokens.RadiusInset)
         }
 
     Row(
@@ -112,7 +112,7 @@ internal fun MessageBubble(
         if (mine) Spacer(Modifier.weight(1f)) else Avatar(message.from, family)
 
         Column(
-            Modifier.widthIn(max = if (mine) 250.dp else 222.dp),
+            Modifier.widthIn(max = if (mine) 260.dp else 230.dp),
             horizontalAlignment = if (mine) Alignment.End else Alignment.Start,
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
@@ -124,7 +124,8 @@ internal fun MessageBubble(
                 Text(
                     if (mine) "You" else message.from,
                     fontSize = Tokens.Instrument,
-                    fontWeight = FontWeight.SemiBold,
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Bold,
                     color = if (mine) p.periwinkle.deep else p.orchid.deep,
                 )
                 if (message.wasTemplate && !mine) {
@@ -145,15 +146,16 @@ internal fun MessageBubble(
             Column(
                 Modifier
                     .background(family.tint, shape)
+                    .border(Tokens.Hairline, family.mid, shape)
                     .then(
                         when {
                             speaking -> Modifier.border(Tokens.SignalBorder, family.core, shape)
-                            queued || failed -> Modifier.dashedEdge(family.mid, 18.dp)
+                            queued || failed -> Modifier.dashedEdge(family.mid, 4.dp)
                             else -> Modifier
                         },
                     )
-                    .padding(start = 13.dp, end = 13.dp, top = 11.dp, bottom = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(7.dp),
+                    .padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
                 horizontalAlignment = if (mine) Alignment.End else Alignment.Start,
             ) {
                 Text(

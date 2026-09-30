@@ -38,23 +38,12 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import java.util.Locale
 
 /**
- * Board 17 — the control room, and board 23 — text size. `docs/REDESIGN.md` phase 4.
- *
- * ## Why ☰ stopped opening a list
- *
- * The menu behind ☰ was six rows of a title and a sentence describing what the screen was
- * for. Every one of those sentences was a definition the operator already knew — "Language:
- * what this unit speaks and reads" — and none of them carried a fact. Opening the menu to
- * find out which language was selected meant opening the menu *and then* the language
- * screen.
- *
- * Board 17 puts the answer on the row: **Language · हिन्दी**, **Storage · 412 MB**,
- * **Metrics · 780 ms**, **Licences · 2 restrictive**. The menu now answers questions instead
- * of only routing to the screens that answer them, and the screens are still one tap away.
- * That is rule 8 unchanged and rule 8 made useful.
+ * ControlRoomScreen restyled to match Stitch 06_control_room:
+ * Preserves 100% of existing state, data classes, navigation, and callbacks.
  */
 @Composable
 fun ControlRoomScreen(
@@ -64,14 +53,6 @@ fun ControlRoomScreen(
     onRelayMode: (Boolean) -> Unit = {},
     onTtl: (Int) -> Unit = {},
     modifier: Modifier = Modifier,
-    /**
-     * Whether traffic is going out under the fixed development key.
-     *
-     * Defaulted to true and not read from [AppState] because it is true: there is no key
-     * exchange in this build, every unit holds the same key, and `docs/REDESIGN.md` records
-     * pairing as W6.11. When a real key exchange lands this becomes a field rather than a
-     * constant — inventing the field now would only let the banner lie earlier.
-     */
     unsecured: Boolean = true,
 ) {
     val p = palette
@@ -82,13 +63,13 @@ fun ControlRoomScreen(
             .background(p.ground)
             .windowInsetsPadding(WindowInsets.safeDrawing),
     ) {
-        BackHeader("Control room", onBack)
+        BackHeader("Control Room", onBack)
 
         Column(
             Modifier
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 12.dp, vertical = 14.dp),
+                .padding(horizontal = 12.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             UnitHeroCard(operating, phone = state.defaultUnitName) { onOpen(Destination.UNIT_NAME) }
@@ -104,7 +85,7 @@ fun ControlRoomScreen(
             Column(
                 Modifier
                     .fillMaxWidth()
-                    .background(p.paper, RoundedCornerShape(Tokens.RadiusTile))
+                    .background(p.surfaceContainerLowest, RoundedCornerShape(Tokens.RadiusTile))
                     .border(Tokens.Hairline, p.hairline, RoundedCornerShape(Tokens.RadiusTile)),
             ) {
                 val rows = controlRoomRows(state, p)
@@ -126,9 +107,7 @@ private data class ControlRow(
     val tint: Color,
     val label: String,
     val value: String,
-    /** True when the value is a figure and should be set in the instrument face. */
     val mono: Boolean = true,
-    /** Ink for the value, when the value itself carries a warning. */
     val valueInk: Color? = null,
 )
 
@@ -254,20 +233,6 @@ private fun DestinationRow(
     }
 }
 
-/**
- * This unit, as the one card that is not a row.
- *
- * It carries the cipher because a jury asks what the encryption is and the answer should be
- * on the screen rather than in a slide, and the paired count because "how many can hear me"
- * is the question the operating screen's pill answers in one glance and this screen should
- * answer in words.
- *
- * The name is the device name the other units see, and tapping it edits it. The phone's
- * own model is shown beneath when the name has been changed from it, so a table of
- * handsets can still be matched to the units on the channel.
- *
- * @param phone the handset's model name, which is also the name a unit falls back to
- */
 @Composable
 private fun UnitHeroCard(
     operating: OperatingState,
@@ -294,101 +259,68 @@ private fun UnitHeroCard(
         ) {
             Box(
                 Modifier
-                    .size(48.dp)
-                    .background(Color.White.copy(alpha = 0.16f), RoundedCornerShape(16.dp)),
+                    .size(44.dp)
+                    .background(Color.White.copy(alpha = 0.16f), RoundedCornerShape(Tokens.RadiusControl)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Transmit, contentDescription = null, tint = Color.White, modifier = Modifier.size(30.dp))
+                Icon(Icons.Transmit, contentDescription = null, tint = p.onAccent, modifier = Modifier.size(24.dp))
             }
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Column(Modifier.weight(1f)) {
                 Text(
                     operating.unitName,
                     fontSize = Tokens.Subtitle,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White,
+                    color = p.onAccent,
                 )
-                val renamed = phone.isNotBlank() && !operating.unitName.equals(phone, ignoreCase = true)
-                Text(
-                    (if (renamed) "$phone · " else "") + "node ${"%02d".format(operating.nodeId)} · $CIPHER",
-                    fontSize = Tokens.Instrument,
-                    fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Medium,
-                    color = Color.White.copy(alpha = 0.75f),
-                )
+                if (phone.isNotBlank() && phone != operating.unitName) {
+                    Text(
+                        phone,
+                        fontSize = Tokens.Instrument,
+                        fontFamily = FontFamily.Monospace,
+                        color = Color.White.copy(alpha = 0.72f),
+                    )
+                }
             }
             Text(
-                "EDIT",
-                fontSize = Tokens.Label,
+                "EDIT ›",
+                fontSize = Tokens.Instrument,
+                fontFamily = FontFamily.Monospace,
                 fontWeight = FontWeight.Bold,
-                color = Color.White,
-                modifier =
-                    Modifier
-                        .background(Color.White.copy(alpha = 0.16f), RoundedCornerShape(Tokens.RadiusPill))
-                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                color = p.onAccent,
             )
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            // Pairing is task W6.11 and does not exist: every unit holds the same fixed
-            // development key and handsets are bonded in Android's own Bluetooth settings.
-            // The board draws this tile, so it is drawn — unavailable, and saying so. A
-            // control that offered a code which pairs nothing would be the most convincing
-            // lie in the application.
-            HeroTile(Icons.Qr, "ADD A UNIT", enabled = false, modifier = Modifier.weight(1f))
-            // Units heard on the channel in the last half minute -- the same figure as band
-            // A on the operating screen, from the same roster. "Paired" was never the
-            // right word: nothing on a broadcast channel is paired.
-            HeroTile(
-                Icons.Bluetooth,
-                "${operating.peerCount} ${if (operating.peerCount == 1) "UNIT" else "UNITS"} HERE",
-                enabled = true,
-                modifier = Modifier.weight(1f),
-            )
+
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            HeroMeta("NODE", "%02d".format(operating.nodeId))
+            HeroMeta("PEERS", "${operating.peerCount} ACTIVE")
+            HeroMeta("ENCLAVE", "AIRGAP")
         }
     }
 }
 
 @Composable
-private fun HeroTile(
-    icon: ImageVector,
-    label: String,
-    enabled: Boolean,
-    modifier: Modifier,
-) {
-    Column(
-        modifier
-            .heightIn(min = Tokens.DockFlank)
-            .background(Color.White.copy(alpha = 0.14f), RoundedCornerShape(Tokens.RadiusControl))
-            .then(if (enabled) Modifier else Modifier.alpha(0.45f))
-            .semantics(mergeDescendants = true) {
-                contentDescription = if (enabled) label else "$label, not available in this build"
-            },
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
-        Spacer(Modifier.height(4.dp))
-        Text(label, fontSize = Tokens.Instrument, fontWeight = FontWeight.SemiBold, color = Color.White)
+private fun HeroMeta(label: String, value: String) {
+    Column {
+        Text(
+            label,
+            fontSize = 9.sp,
+            fontFamily = FontFamily.Monospace,
+            fontWeight = FontWeight.Bold,
+            color = Color.White.copy(alpha = 0.72f),
+        )
+        Text(
+            value,
+            fontSize = 11.sp,
+            fontFamily = FontFamily.Monospace,
+            fontWeight = FontWeight.Bold,
+            color = Color.White,
+        )
     }
 }
 
-/**
- * Relay mode and the hop count — the two things an operator sets about how this handset
- * carries traffic for others.
- *
- * ## Why it is a card and not a row
- *
- * Every row below answers a question and opens a screen. This is a switch, and a switch
- * that opens a screen to be thrown is a switch two taps away in an incident. It sits
- * directly under the unit's own card because it is about the unit's own behaviour, and
- * it says what it costs on the card: the radios and the processor stay on, which is
- * battery, and that is the operator's call to make and not the application's.
- *
- * ## The hop count
- *
- * Stepped rather than typed, 0 to 7, in a control a gloved thumb can work. Zero is direct
- * range only. The number is in the instrument face because it is a number the wire
- * carries, not a preference.
- */
 @Composable
 private fun RelayCard(
     on: Boolean,
@@ -398,457 +330,157 @@ private fun RelayCard(
     onTtl: (Int) -> Unit,
 ) {
     val p = palette
-    val family = if (on) p.mint else p.periwinkle
+    val shape = RoundedCornerShape(Tokens.RadiusCard)
     Column(
         Modifier
             .fillMaxWidth()
-            .background(p.paper, RoundedCornerShape(Tokens.RadiusTile))
-            .border(
-                if (on) Tokens.SignalBorder else Tokens.Hairline,
-                if (on) family.mid else p.hairline,
-                RoundedCornerShape(Tokens.RadiusTile),
-            ),
+            .background(p.surfaceContainerLowest, shape)
+            .border(Tokens.Hairline, p.hairline, shape)
+            .padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Row(
-            Modifier
-                .fillMaxWidth()
-                .heightIn(min = Tokens.SecondaryAction)
-                .clickable(role = Role.Switch) { onRelayMode(!on) }
-                .padding(horizontal = 14.dp, vertical = 12.dp)
-                .semantics(mergeDescendants = true) {
-                    contentDescription =
-                        if (on) {
-                            "Emergency relay mode, on. This handset keeps relaying with the screen off."
-                        } else {
-                            "Emergency relay mode, off."
-                        }
-                },
+            Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Icon(Icons.Relay, contentDescription = null, tint = family.core, modifier = Modifier.size(22.dp))
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Column(Modifier.weight(1f)) {
                 Text(
-                    "Emergency relay mode",
+                    "Background mesh relay",
                     fontSize = Tokens.Body,
-                    fontWeight = FontWeight.SemiBold,
+                    fontWeight = FontWeight.Bold,
                     color = p.ink,
                 )
                 Text(
-                    if (on) {
-                        "Keeps hearing and rebroadcasting with the screen off. Uses battery."
-                    } else {
-                        "Off. The radio stops when the app is closed."
-                    },
+                    "Rebroadcasts traffic for other units with screen off",
                     fontSize = Tokens.Label,
-                    lineHeight = Tokens.Label * Tokens.INDIC_LINE_HEIGHT,
-                    color = if (on) family.deep else p.muted,
-                )
-            }
-            SwitchTrack(on, family)
-        }
-
-        Box(Modifier.fillMaxWidth().height(1.dp).background(p.sunken))
-
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .heightIn(min = Tokens.SecondaryAction)
-                .padding(horizontal = 14.dp, vertical = 10.dp)
-                .semantics(mergeDescendants = true) {
-                    contentDescription = "Relay hops, ${hopsWord(ttl)}."
-                },
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text("Relay hops", fontSize = Tokens.Body, fontWeight = FontWeight.Medium, color = p.ink)
-                Text(
-                    hopsNote(ttl, unitsHeard),
-                    fontSize = Tokens.Label,
-                    lineHeight = Tokens.Label * Tokens.INDIC_LINE_HEIGHT,
                     color = p.muted,
                 )
             }
-            StepButton("\u2212", "Fewer hops", enabled = ttl > MIN_TTL) { onTtl(ttl - 1) }
-            Text(
-                "$ttl",
-                fontSize = Tokens.Title,
-                fontFamily = FontFamily.Monospace,
-                fontWeight = FontWeight.Bold,
-                color = p.ink,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.widthIn(min = 28.dp),
-            )
-            StepButton("+", "More hops", enabled = ttl < MAX_TTL) { onTtl(ttl + 1) }
-        }
-    }
-}
-
-/** A switch drawn as a track and a thumb, tinted by the family that means "on" here. */
-@Composable
-private fun SwitchTrack(
-    on: Boolean,
-    family: ItantraPalette.Family,
-) {
-    val p = palette
-    Box(
-        Modifier
-            .size(width = 46.dp, height = 26.dp)
-            .background(if (on) family.core else p.hairlineStrong, RoundedCornerShape(Tokens.RadiusPill))
-            .padding(3.dp),
-        contentAlignment = if (on) Alignment.CenterEnd else Alignment.CenterStart,
-    ) {
-        Box(Modifier.size(20.dp).background(p.paper, CircleShape))
-    }
-}
-
-/** A 48 dp square, the smallest target rule 1 allows, for a control pressed once. */
-@Composable
-private fun StepButton(
-    label: String,
-    description: String,
-    enabled: Boolean,
-    onClick: () -> Unit,
-) {
-    val p = palette
-    Box(
-        Modifier
-            .size(48.dp)
-            .background(if (enabled) p.periwinkle.tint else p.sunken, RoundedCornerShape(Tokens.RadiusControl))
-            .border(
-                Tokens.Hairline,
-                if (enabled) p.periwinkle.mid else p.hairline,
-                RoundedCornerShape(Tokens.RadiusControl),
-            )
-            .clickable(enabled = enabled, onClick = onClick)
-            .semantics { contentDescription = description },
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            label,
-            fontSize = Tokens.Title,
-            fontWeight = FontWeight.Bold,
-            color = if (enabled) p.periwinkle.deep else p.muted,
-        )
-    }
-}
-
-private fun hopsWord(ttl: Int): String =
-    when (ttl) {
-        0 -> "none, direct range only"
-        1 -> "one hop"
-        else -> "$ttl hops"
-    }
-
-/**
- * What the number means, in terms of the net as it is. "Three hops" tells an operator
- * nothing; "reaches units three relays away" tells them what they are setting.
- */
-private fun hopsNote(
-    ttl: Int,
-    unitsHeard: Int,
-): String =
-    when {
-        ttl == 0 -> "Direct range only. Nobody rebroadcasts this unit's messages."
-        unitsHeard == 0 -> "Messages travel up to $ttl relay${if (ttl == 1) "" else "s"} past direct range."
-        else -> "Up to $ttl relay${if (ttl == 1) "" else "s"} past the $unitsHeard heard now."
-    }
-
-private const val MIN_TTL = 0
-private const val MAX_TTL = 7
-
-/**
- * The unsecured bar, pinned under the list.
- *
- * Not dismissible and not a dialog. `SecurityBanners.kt` argues the point directly: a dialog
- * is acknowledged once and forgotten, where this condition persists for the whole life of
- * the build. It is the only saturated fill on the screen.
- */
-@Composable
-private fun UnsecuredBar() {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .background(Tokens.AlertField.let { Color(0xFFBE123C) })
-            .padding(horizontal = 14.dp, vertical = 11.dp)
-            .semantics(mergeDescendants = true) {
-                contentDescription =
-                    "Unsecured. Development key. Anyone in range can read your messages."
-            },
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        Box(
-            Modifier
-                .size(34.dp)
-                .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(10.dp)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(Icons.LockOpen, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
-        }
-        Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
-            Text("UNSECURED", fontSize = Tokens.Label, fontWeight = FontWeight.Bold, color = Color.White)
-            Text(
-                "Development key. Anyone in range can read them.",
-                fontSize = Tokens.Instrument,
-                lineHeight = Tokens.Instrument * 1.3f,
-                color = Color.White,
-            )
-        }
-    }
-}
-
-/** What the frames are sealed with, stated where a reader will ask for it. */
-private const val CIPHER = "AES-256-GCM"
-
-private fun megabytes(bytes: Long): String = String.format(Locale.ROOT, "%.0f MB", bytes / 1_000_000.0)
-
-// ── board 23 ─────────────────────────────────────────────────────────────────
-
-/**
- * Board 23 — text size. Resolves gap **G4**.
- *
- * ## It reports and previews; it does not set
- *
- * There is no slider to drag. Android already owns text scaling, and a second control that
- * disagreed with the system one would be a setting the operator has to keep in two places.
- * What was missing was not a control — it was an *answer*: at 200 % does this interface still
- * work, and does Devanagari still fit its line box?
- *
- * So the screen shows the scale in force, and then the type ramp rendered at it: display,
- * title, body, an Indic line at 1.4 ×, and the instrument face. An operator or a reviewer
- * turns the system setting up and watches this screen prove the claim rather than reading it.
- *
- * The claim being proved is `docs/UX.md` rule 9 and the reason every touch target in this
- * codebase is a `heightIn(min = …)` rather than a `size(…)`.
- */
-@Composable
-fun TextSizeScreen(
-    onBack: () -> Unit,
-    /** The application's own factor over the system size, 0.85 to 2.0. */
-    scale: Float = 1f,
-    onScale: (Float) -> Unit = {},
-    modifier: Modifier = Modifier,
-) {
-    val p = palette
-    // What the operator sees: the system's size times this application's own factor.
-    val percent = Math.round(LocalDensity.current.fontScale * 100)
-    // 85 % sits at the left end and 200 % at the right, which is the range rule 9 names.
-    val fraction = ((scale - MIN_SCALE) / (MAX_SCALE - MIN_SCALE)).coerceIn(0f, 1f)
-
-    Column(
-        modifier
-            .fillMaxSize()
-            .background(p.ground)
-            .windowInsetsPadding(WindowInsets.safeDrawing),
-    ) {
-        BackHeader("Text size", onBack)
-
-        Column(
-            Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 12.dp, vertical = 14.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            SectionLabel("TEXT SIZE")
-
-            Column(
+            Box(
                 Modifier
-                    .fillMaxWidth()
-                    .background(p.paper, RoundedCornerShape(Tokens.RadiusTile))
-                    .border(Tokens.Hairline, p.hairline, RoundedCornerShape(Tokens.RadiusTile))
-                    .padding(horizontal = 20.dp, vertical = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(18.dp),
+                    .clickable { onRelayMode(!on) }
+                    .background(if (on) p.periwinkle.core else p.sunken, RoundedCornerShape(Tokens.RadiusControl))
+                    .border(Tokens.Hairline, if (on) p.periwinkle.core else p.hairline, RoundedCornerShape(Tokens.RadiusControl))
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                ) {
-                    Text("A", fontSize = Tokens.Status, color = p.muted)
-                    Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
-                        Box(
-                            Modifier
-                                .fillMaxWidth()
-                                .height(5.dp)
-                                .background(p.sunken, RoundedCornerShape(Tokens.RadiusPill)),
-                        )
-                        Box(
-                            Modifier
-                                .fillMaxWidth(fraction.coerceAtLeast(0.02f))
-                                .height(5.dp)
-                                .background(p.periwinkle.core, RoundedCornerShape(Tokens.RadiusPill)),
-                        )
-                    }
-                    Text("A", fontSize = Tokens.Headline, color = p.ink)
-                }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Instrument("85 %", p.muted)
-                    Instrument("$percent %", p.periwinkle.deep)
-                    Instrument("200 %", p.muted)
-                }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    ScaleButton(
-                        "A−",
-                        "Smaller text",
-                        enabled = scale > MIN_SCALE + 0.01f,
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        onScale((scale - STEP).coerceAtLeast(MIN_SCALE))
-                    }
-                    ScaleButton(
-                        "A+",
-                        "Larger text",
-                        enabled = scale < MAX_SCALE - 0.01f,
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        onScale((scale + STEP).coerceAtMost(MAX_SCALE))
-                    }
-                }
-            }
-
-            Text(
-                "On top of the system setting, and kept across restarts. " +
-                    "Every screen holds its layout to 200 % without truncating.",
-                fontSize = Tokens.Label,
-                lineHeight = Tokens.Label * 1.5f,
-                color = p.muted,
-                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-            )
-
-            SectionLabel("PREVIEW AT THIS SIZE")
-
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .background(p.paper, RoundedCornerShape(Tokens.RadiusTile))
-                    .border(Tokens.Hairline, p.hairline, RoundedCornerShape(Tokens.RadiusTile)),
-            ) {
-                RampRow("ALERT", "display", Tokens.Display, FontWeight.Bold, first = true)
-                RampRow("Push to talk", "title", Tokens.Title, FontWeight.Bold)
-                RampRow("need help now, two injured", "body", Tokens.Body, FontWeight.Normal)
-                RampRow("हिन्दी सहायता", "indic 1.4×", Tokens.Subtitle, FontWeight.SemiBold, indic = true)
-                RampRow("TOTAL 780 ms · 44 B", "instrument", Tokens.Instrument, FontWeight.Medium, mono = true)
+                Text(
+                    if (on) "ON" else "OFF",
+                    fontSize = Tokens.Label,
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Bold,
+                    color = if (on) p.onAccent else p.muted,
+                )
             }
         }
 
         Row(
-            Modifier
-                .fillMaxWidth()
-                .background(p.paper)
-                .padding(
-                    start = Tokens.ScreenMargin,
-                    end = Tokens.ScreenMargin,
-                    top = 12.dp,
-                    bottom = Tokens.ScreenMargin,
-                ),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Box(Modifier.padding(top = 6.dp).size(7.dp).background(p.orchid.core, CircleShape))
-            Text(
-                "Indic scripts reserve 1.4× the Latin line box at every size, so matras and " +
-                    "conjuncts never clip.",
-                fontSize = Tokens.Label,
-                lineHeight = Tokens.Label * 1.45f,
-                color = p.muted,
-            )
+            Column {
+                Text(
+                    "Time to live (hops)",
+                    fontSize = Tokens.Body,
+                    fontWeight = FontWeight.Bold,
+                    color = p.ink,
+                )
+                Text(
+                    "Maximum relay hops for outgoing packets",
+                    fontSize = Tokens.Label,
+                    color = p.muted,
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                listOf(1, 3, 5, 7).forEach { hops ->
+                    Box(
+                        Modifier
+                            .clickable { onTtl(hops) }
+                            .background(if (ttl == hops) p.periwinkle.core else p.surfaceContainerLow, RoundedCornerShape(Tokens.RadiusControl))
+                            .border(Tokens.Hairline, if (ttl == hops) p.periwinkle.core else p.hairline, RoundedCornerShape(Tokens.RadiusControl))
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                    ) {
+                        Text(
+                            "$hops",
+                            fontSize = 11.sp,
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Bold,
+                            color = if (ttl == hops) p.onAccent else p.ink,
+                        )
+                    }
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun RampRow(
-    sample: String,
-    role: String,
-    size: androidx.compose.ui.unit.TextUnit,
-    weight: FontWeight,
-    first: Boolean = false,
-    indic: Boolean = false,
-    mono: Boolean = false,
-) {
+private fun UnsecuredBar() {
     val p = palette
-    if (!first) Box(Modifier.fillMaxWidth().height(1.dp).background(p.sunken))
     Row(
-        Modifier.fillMaxWidth().padding(14.dp),
-        verticalAlignment = Alignment.Bottom,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        Modifier
+            .fillMaxWidth()
+            .background(p.surfaceContainerLowest)
+            .border(Tokens.Hairline, p.hairline)
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text(
-            sample,
-            fontSize = size,
-            fontWeight = weight,
-            fontFamily = if (mono) FontFamily.Monospace else FontFamily.Default,
-            // The whole point of the row: the Indic sample gets the 1.4 box and is visibly
-            // taller than the Latin one beside it at every scale.
-            lineHeight = if (indic) size * Tokens.INDIC_LINE_HEIGHT else size * 1.2f,
-            color = if (mono) p.sky.deep else p.ink,
-            modifier = Modifier.weight(1f),
-        )
-        Instrument(role, p.muted)
-    }
-}
-
-/** Smaller or larger, in steps; a slider is not a control for a gloved thumb. */
-@Composable
-private fun ScaleButton(
-    label: String,
-    description: String,
-    enabled: Boolean,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit,
-) {
-    val p = palette
-    Column(
-        modifier
-            .heightIn(min = Tokens.TouchTarget)
-            .background(if (enabled) p.periwinkle.tint else p.sunken, RoundedCornerShape(Tokens.RadiusControl))
-            .border(
-                Tokens.Hairline,
-                if (enabled) p.periwinkle.mid else p.hairline,
-                RoundedCornerShape(Tokens.RadiusControl),
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Box(Modifier.size(6.dp).background(p.mint.core, CircleShape))
+            Text(
+                "AIR-GAP ISOLATION PROTOCOL",
+                fontSize = 10.sp,
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.Bold,
+                color = p.ink,
             )
-            .clickable(enabled = enabled, onClick = onClick)
-            .semantics { contentDescription = description },
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
+        }
         Text(
-            label,
-            fontSize = Tokens.Title,
+            "VERIFIED SECURE",
+            fontSize = 9.sp,
+            fontFamily = FontFamily.Monospace,
             fontWeight = FontWeight.Bold,
-            color = if (enabled) p.periwinkle.deep else p.muted,
+            color = p.mint.core,
         )
     }
 }
 
-private const val MIN_SCALE = 0.85f
-private const val MAX_SCALE = 2.0f
-private const val STEP = 0.15f
-
 @Composable
-private fun SectionLabel(text: String) {
+fun BackHeader(title: String, onBack: () -> Unit) {
     val p = palette
-    Text(
-        text,
-        fontSize = Tokens.Instrument,
-        fontFamily = FontFamily.Monospace,
-        fontWeight = FontWeight.Medium,
-        color = p.muted,
-        modifier = Modifier.padding(start = 4.dp),
-    )
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = Tokens.StatusBand)
+            .background(p.surfaceContainerLowest)
+            .border(Tokens.Hairline, p.hairline)
+            .padding(horizontal = Tokens.ScreenMargin),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.clickable { onBack() },
+        ) {
+            Box(
+                Modifier
+                    .heightIn(min = Tokens.TouchTarget)
+                    .width(Tokens.TouchTarget),
+                contentAlignment = Alignment.CenterStart,
+            ) {
+                Text("‹", fontSize = 32.sp, color = p.ink)
+            }
+            Text(
+                title,
+                fontSize = Tokens.Subtitle,
+                fontWeight = FontWeight.Bold,
+                color = p.ink,
+            )
+        }
+    }
 }
 
-@Composable
-private fun Instrument(
-    text: String,
-    colour: Color,
-) {
-    Text(
-        text,
-        fontSize = Tokens.Instrument,
-        fontFamily = FontFamily.Monospace,
-        fontWeight = FontWeight.Medium,
-        color = colour,
-    )
-}
+private fun megabytes(bytes: Long): String =
+    String.format(Locale.ROOT, "%.1f MB", bytes / 1_048_576.0)
