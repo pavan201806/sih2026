@@ -262,7 +262,8 @@ object ModelDownloader {
                 var bytesSinceLastSpeedCalc = 0L
                 var currentBps = 0L
 
-                openDownloadStreamWithRedirects(item.url).use { (inputStream, _) ->
+                val (downloadStream, _) = openDownloadStreamWithRedirects(item.url)
+                downloadStream.use { inputStream ->
                     FileOutputStream(tempFile).use { outputStream ->
                         val buffer = ByteArray(BUFFER_SIZE)
                         progress = progress.copy(stage = Stage.DOWNLOADING)

@@ -248,7 +248,7 @@ private fun RealLanguageModelCard(
     val borderColor = when {
         isReady -> p.mint.mid
         isDownloading -> p.sky.mid
-        isFailed -> p.crimson.mid
+        isFailed -> p.blush.mid
         else -> p.hairline
     }
 
@@ -449,18 +449,18 @@ private fun RealLanguageModelCard(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(p.crimson.tint, RoundedCornerShape(Tokens.RadiusControl))
-                    .border(Tokens.Hairline, p.crimson.mid, RoundedCornerShape(Tokens.RadiusControl))
+                    .background(p.blush.tint, RoundedCornerShape(Tokens.RadiusControl))
+                    .border(Tokens.Hairline, p.blush.mid, RoundedCornerShape(Tokens.RadiusControl))
                     .padding(horizontal = 12.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Box(Modifier.size(8.dp).background(p.crimson.core, CircleShape))
+                Box(Modifier.size(8.dp).background(p.blush.core, CircleShape))
                 Text(
                     text = progressState.errorMessage ?: "Installation failed",
                     fontSize = Tokens.Label,
                     fontWeight = FontWeight.Medium,
-                    color = p.crimson.deep,
+                    color = p.blush.deep,
                 )
             }
         }
@@ -488,8 +488,8 @@ private fun RealLanguageModelCard(
                         modifier = Modifier
                             .weight(1f)
                             .heightIn(min = 40.dp)
-                            .background(p.crimson.tint, RoundedCornerShape(Tokens.RadiusInset))
-                            .border(Tokens.Hairline, p.crimson.mid, RoundedCornerShape(Tokens.RadiusInset))
+                            .background(p.blush.tint, RoundedCornerShape(Tokens.RadiusInset))
+                            .border(Tokens.Hairline, p.blush.mid, RoundedCornerShape(Tokens.RadiusInset))
                             .clickable {
                                 showRemoveConfirm = false
                                 onRemoveClick()
@@ -501,7 +501,7 @@ private fun RealLanguageModelCard(
                             text = "Confirm Remove",
                             fontSize = Tokens.Label,
                             fontWeight = FontWeight.Bold,
-                            color = p.crimson.deep,
+                            color = p.blush.deep,
                         )
                     }
 
@@ -540,7 +540,7 @@ private fun RealLanguageModelCard(
                                 .fillMaxWidth()
                                 .heightIn(min = 48.dp)
                                 .background(p.paper, RoundedCornerShape(Tokens.RadiusControl))
-                                .border(Tokens.Hairline, p.crimson.mid, RoundedCornerShape(Tokens.RadiusControl))
+                                .border(Tokens.Hairline, p.blush.mid, RoundedCornerShape(Tokens.RadiusControl))
                                 .clickable(onClick = onCancelClick)
                                 .padding(horizontal = 16.dp),
                             verticalAlignment = Alignment.CenterVertically,
@@ -550,7 +550,7 @@ private fun RealLanguageModelCard(
                                 text = "Cancel Download",
                                 fontSize = Tokens.BodySmall,
                                 fontWeight = FontWeight.Bold,
-                                color = p.crimson.deep,
+                                color = p.blush.deep,
                             )
                         }
                     }
@@ -597,7 +597,7 @@ private fun RealLanguageModelCard(
                                 text = "Remove",
                                 fontSize = Tokens.BodySmall,
                                 fontWeight = FontWeight.SemiBold,
-                                color = p.crimson.deep,
+                                color = p.blush.deep,
                             )
                         }
                     }
