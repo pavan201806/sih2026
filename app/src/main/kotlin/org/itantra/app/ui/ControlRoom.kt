@@ -184,7 +184,7 @@ private fun controlRoomRows(
             Icons.Download,
             p.mint.core,
             "AI Model Setup",
-            "Demo Setup",
+            "Offline models",
             mono = false,
             valueInk = p.mint.deep,
         ),
