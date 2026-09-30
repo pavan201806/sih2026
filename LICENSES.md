@@ -10,7 +10,7 @@ compliance**, and it is maintained from week 1 rather than assembled in week 8 (
 
 ## Project licence
 
-iTantra is released under **Apache-2.0**, subject to the copyleft note in §6.
+RakshaVaani is released under **Apache-2.0**, subject to the copyleft note in §6.
 
 ## 1. Runtime and inference
 

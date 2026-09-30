@@ -86,7 +86,7 @@ fun SplashScreen(
         ) {
             Spacer(Modifier.height(40.dp))
             Text(
-                "iTantra",
+                "RakshaVaani",
                 fontSize = Tokens.Display,
                 fontWeight = FontWeight.Bold,
                 color = p.ink,

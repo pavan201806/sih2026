@@ -777,6 +777,6 @@ class MainActivity : ComponentActivity() {
         const val DISTRIBUTION_NOTICE =
             "This build links espeak-ng (GPL-3.0) inside libsherpa-onnx-jni.so, so the " +
                 "installer as a whole is conveyed under GPL-3.0. Complete corresponding " +
-                "source: github.com/vikranthsai310/sih2026"
+                "source: https://github.com/pavan201806/sih2026"
     }
 }

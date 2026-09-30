@@ -469,7 +469,7 @@ private fun ImportSteps(hasFiles: Boolean) {
         StepLine(2, "Tap Select files, open Downloads, and select them all.", active = !hasFiles)
         Box(Modifier.fillMaxWidth().height(1.dp).background(p.sunken))
         Text(
-            "This app holds no INTERNET permission. The browser fetches; iTantra verifies by SHA-256.",
+            "This app holds no INTERNET permission. The browser fetches; RakshaVaani verifies by SHA-256.",
             fontSize = Tokens.Instrument,
             fontFamily = FontFamily.Monospace,
             fontWeight = FontWeight.Medium,

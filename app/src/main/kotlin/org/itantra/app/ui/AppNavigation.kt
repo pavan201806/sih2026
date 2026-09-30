@@ -59,13 +59,14 @@ import org.itantra.bench.UtteranceTrace
  * until there is a key exchange behind it.
  */
 enum class Destination(val title: String) {
-    OPERATING("iTantra"),
+    OPERATING("RakshaVaani"),
     MENU("SETTINGS"),
     MESSAGES("MESSAGES"),
     LANGUAGE("LANGUAGE"),
     METRICS("METRICS"),
     MODE("MODE & TRANSPORT"),
     STORAGE("STORAGE"),
+    MODEL_SETUP("AI MODEL SETUP"),
 
     /** What this unit calls itself, as every other unit sees it. */
     UNIT_NAME("DEVICE NAME"),
@@ -382,6 +383,11 @@ private fun Routed(
                     currentLanguage = state.operating.languageCode,
                     onDownload = actions.onDownload,
                     onDownloadAll = actions.onDownloadAll,
+                )
+
+            Destination.MODEL_SETUP ->
+                ModelSetupScreen(
+                    onContinue = { where = Destination.OPERATING },
                 )
 
             Destination.LICENCES ->

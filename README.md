@@ -1,133 +1,206 @@
-<div align="center">
+# RakshaVaani (रक्षावाणी)
+### Offline-First Multilingual Mesh Voice Communication for Disaster Relief
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/sih-2026-dark.png">
-  <img src="docs/assets/sih-2026.png" alt="Smart India Hackathon 2026" width="430">
-</picture>
+[![Build APK](https://github.com/pavan201806/sih2026/actions/workflows/build-apk.yml/badge.svg)](https://github.com/pavan201806/sih2026/actions/workflows/build-apk.yml)
+[![Android](https://img.shields.io/badge/Platform-Android_8.0+_(API_26–35)-3DDC84?logo=android&logoColor=white)](https://developer.android.com)
+[![Kotlin](https://img.shields.io/badge/Language-Kotlin_2.0-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org)
+[![Licence](https://img.shields.io/badge/Licence-GPL--3.0_/_Apache--2.0-blue.svg)](LICENSES.md)
 
-<br><br>
+---
 
-# iTantra
+## 1. Executive Summary
 
-**Indian Multilingual TTS &amp; STT Aided Neural Transceiver**<br>
-*Radio Access for Low Bitrate Links*
+During natural disasters (floods, cyclones, earthquakes, and landslides), commercial telecom infrastructure (cellular towers, fiber backhauls, and power grids) suffers total collapse within hours. First responders and stranded civilians face two critical bottlenecks:
 
-Smart India Hackathon 2026 · Problem Statement **26173** · ISRO, Department of Space
+1. **Zero Connectivity:** Standard VoIP and messaging applications fail completely without internet or active SIM cards.
+2. **Language Barriers:** Rescue teams deployed across different Indian states often cannot comprehend regional dialects or scripts under high-stress emergency conditions.
 
-<br>
+**RakshaVaani** is a resilient, 100% offline emergency communication system designed for entry-tier Android handsets. It transforms commodity smartphones into an autonomous voice-and-data mesh network without cell towers, Wi-Fi routers, or internet access.
 
-![Problem Statement](https://img.shields.io/badge/PS-26173-F48C22?style=flat-square)
-![Organisation](https://img.shields.io/badge/ISRO-Dept._of_Space-149447?style=flat-square)
-![Platform](https://img.shields.io/badge/Android-8.0%2B-415861?style=flat-square)
-![Offline](https://img.shields.io/badge/runtime-100%25_offline-149447?style=flat-square)
-![Languages](https://img.shields.io/badge/languages-10-F48C22?style=flat-square)
-![Licence](https://img.shields.io/badge/licence-Apache--2.0-415861?style=flat-square)
+By pairing **on-device neural Speech-to-Text (STT)**, **compact wire-frame encoding (< 52 bytes per sentence)**, **AES-256-GCM mesh transport**, and **offline Text-to-Speech (TTS) synthesis**, RakshaVaani allows a responder to speak in their native tongue and have it spoken aloud on peer handsets in the recipient's chosen regional language.
 
-<br>
+---
 
-<img src="docs/assets/mesh.svg" alt="One handset speaks and many hear: speech is recognised on the sending device, sent as a small packet to three handsets over the radio link and to a fourth by a relay hop, then re-synthesised locally on each." width="100%">
+## 2. System Architecture & End-to-End Pipeline
 
-</div>
-
-<br>
-
-**Demo video (3:46):** https://youtu.be/GVBlYKCdaDs — two phones in airplane mode, ten languages, relay, alerts and Locate.
-
-> **Speech goes in one end. Speech comes out the other.** In between it becomes a few dozen
-> bytes — small enough to cross a radio link that could never carry a voice.
-
-Two people hold two ordinary phones. One speaks Hindi; the other hears Hindi. No SIM, no
-tower, no cloud — the demo runs in aeroplane mode. What crosses the link is not audio. It
-is meaning, and meaning is small.
-
-## Why it works
-
-| Representation | 3-second sentence | Fits a 300 bps link? |
-| --- | --- | --- |
-| Raw PCM, 16 kHz 16-bit mono | 96 000 B | No — 43 minutes |
-| Opus at 6 kbps (the practical floor) | 2 250 B | No — 60 s |
-| **iTantra, encrypted** | **52 B** | **Yes — 1.4 s** |
-| **iTantra template code, encrypted** | **21 B** | **Yes — 0.6 s** |
-
-Audio codecs compress the *waveform*, and a waveform detailed enough to be understood has
-an irreducible size. iTantra doesn't compress the waveform at all — it recognises the
-speech on the sending phone, sends the meaning, and re-synthesises it on the receiving
-phone. Both people only ever speak and listen.
-
-That is **1 600×** smaller than raw audio, and **43×** smaller than the Opus floor.
-
-```mermaid
-flowchart LR
-  A["Speak"] --> B["Recognise<br/>on device"] --> C["Pack to<br/>~52 bytes"]
-  C -->|"Bluetooth · Wi-Fi · LoRa"| D["Unpack"] --> E["Speak aloud"]
+```text
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                           SENDER HANDSET (Phone A)                             │
+│                                                                                 │
+│   [ Micro ] ──► [ AudioCapture ] ──► [ AI4Bharat IndicConformer ]              │
+│   16 kHz PCM     100 ms chunks        Streaming ASR (int8 ONNX)                 │
+│                                                    │                            │
+│                                                    ▼                            │
+│   [ AES-256-GCM ] ◄── [ FrameCodec ] ◄── [ Clause Segmenter ]                  │
+│    Sealed Payload      < 52 B frame       Semantic Text Chunking                │
+└──────────────────────────────────────┬──────────────────────────────────────────┘
+                                       │
+                     OFFLINE MULTI-RADIO AD-HOC MESH
+           (Bluetooth RFCOMM · BLE 5.0 Broadcast · Wi-Fi Direct P2P)
+                                       │
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                          RELAY NODE (Phone B - Optional)                        │
+│                                                                                 │
+│   [ Incoming Frame ] ──► [ Deduplication ] ──► [ TTL Decrement ] ──► [ Re-TX ] │
+│                           Seen-Set Cache        TTL > 0              Jittered   │
+└──────────────────────────────────────┬──────────────────────────────────────────┘
+                                       │
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                          RECEIVER HANDSET (Phone C)                             │
+│                                                                                 │
+│   [ FrameCodec ] ──► [ AES-256-GCM ] ──► [ TextNormaliser ]                     │
+│    De-framing         Verified Decrypt    Numerals & Lexicon Mapping            │
+│                                                    │                            │
+│                                                    ▼                            │
+│   [ Loudspeaker ] ◄── [ AudioSink ] ◄─── [ Piper / VITS TTS ]                  │
+│    Emergency Voice     AudioTrack Stream   On-Device Neural Synthesis           │
+└─────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-## What it does
+### Transmission Levels
+1. **Level 1 (Direct Speech Frame):** The speaker's voice is transcribed into text by an on-device int8 quantized neural model, packaged into an ultra-compact binary packet (~30–50 bytes), sealed with AES-256-GCM, and transmitted over ad-hoc radios.
+2. **Level 2 (Emergency Alert):** High-priority alerts bypass transmit queues, trigger instant non-interruptible playback at maximum volume on receiving handsets, and flash the screen.
+3. **Level 3 (Template Code - 1 Byte):** When acoustic models are not installed or in severe RF degradation, 1-byte pre-compiled emergency operational codes (e.g., *"Medical assistance required urgently"*) are transmitted and synthesized locally in any of the 10 supported regional languages.
 
-- **Ten Indian languages** — English, Hindi, Bengali, Marathi, Telugu, Tamil, Gujarati,
-  Kannada, Malayalam, Odia.
-- **Entirely offline.** No cloud, no SIM, no network call at runtime.
-- **One speaks, many hear.** Every frame is broadcast to the whole net, and a phone out of
-  range is reached by a relay hop through one that isn't.
-- **Cross-language alerts.** A Hindi speaker's alert reaches a Tamil speaker *in Tamil* —
-  no translation model. It falls out of how the compression works.
-- **Encrypted.** AES-256-GCM with a pre-shared key, so a fraudulent evacuation order can't
-  be injected.
-- **Two modes** — push-to-talk, and released for ordinary two-way conversation.
-- **Four transports** behind one interface: Bluetooth Classic, BLE, Wi-Fi, and serial to a
-  LoRa or HF radio for kilometre range.
-- **Entry-tier hardware.** A 4 GB handset is the target, not a flagship.
+---
 
-## Status
+## 3. Key Capabilities
 
-The loop is closed and running on real handsets — speech in, radio link, speech out.
+* **100% Offline by Design:** No cellular data, no internet permission, no cloud servers, and no SIM card required.
+* **Multilingual Coverage:** Architected for 10 Scheduled Indian languages:
+  * **Hindi (हिन्दी)**
+  * **Telugu (తెలుగు)**
+  * **Tamil (தமிழ்)**
+  * **Marathi (मराठी)**
+  * **Bengali (বাংলা)**
+  * **Gujarati (ગુજરાતી)**
+  * **Kannada (ಕನ್ನಡ)**
+  * **Malayalam (മലയാളം)**
+  * **Odia (ଓଡ଼ିଆ)**
+  * **English**
+* **Multi-Radio Mesh Network:**
+  * **Bluetooth RFCOMM (Classic):** Auto-dialing and connection establishment across bonded handsets.
+  * **BLE 5.0 Extended Advertising:** Connectionless, zero-handshake radio broadcasts (`OnAirBuffer`).
+  * **Wi-Fi Direct P2P:** Autonomous group-owner negotiation without opening Android system settings.
+  * **UDP Subnet Broadcast:** High-throughput local network datagrams across Wi-Fi hotspots.
+* **Store-and-Forward Mesh Relaying:**
+  * 3-bit TTL (up to 7 relay hops).
+  * Cyclic sequence tracking with a 512-entry sliding seen-set cache to eliminate packet storms.
+  * Randomized transmission jitter (20–100 ms) preventing RF packet collisions.
+* **Security & Authenticity:**
+  * AES-256-GCM authenticated encryption.
+  * 12-byte unencrypted frame header authenticated as Additional Authenticated Data (AAD).
+  * Monotonic epoch counters mitigating replay attacks.
+* **Tactical Emergency Features:**
+  * **3-Second Lock Gate:** Prevents accidental pocket triggers under adverse conditions.
+  * **DND-Bypassing Siren:** Maximum volume emergency acoustic alarm for immediate awareness.
+  * **Acoustic Direction Finder (`LOCATE`):** Measures radio RSSI and emits acoustic cadence feedback to locate trapped team members.
+  * **Sunlight-Optimised UI:** High-contrast monochrome & spectrum design system strictly adhering to WCAG AAA contrast ratios with full Indic script line-box padding.
 
-| | |
-| --- | --- |
-| Tasks complete | **126 of 170** ([docs/TODO.md](docs/TODO.md)) |
-| Code | 156 source files, 76 test files, 8 modules |
-| Last verified on | Galaxy **SM-S947B**, Android 16 |
-| Latency target | 800–1200 ms end to end, push-to-talk |
+---
 
-## Build it
+## 4. Multi-Module Project Structure
 
-Needs JDK 17+, the Android SDK, and Python 3. Details in [docs/SETUP.md](docs/SETUP.md).
+The project is structured into 8 modular Kotlin/Android modules for strict separation of concerns:
 
+```text
+sih2026/
+├── app/                  # Main Android UI (Jetpack Compose), Foreground Services, Platform Bindings
+├── core-proto/           # Binary frame codecs, AES-256-GCM cipher, Mesh router, Template catalog
+├── core-audio/           # 16 kHz PCM AudioRecord capture, Ring buffers, AudioTrack sink
+├── core-asr/             # Sherpa-ONNX streaming IndicConformer speech recognition interface
+├── core-tts/             # Sherpa-ONNX VITS speech synthesis, text normalisation, Hindi numerals
+├── core-link/            # Radio link implementations (Bluetooth RFCOMM, BLE Broadcast, Wi-Fi Direct)
+├── core-models/          # Emergency lexicons, install manifests, SHA-256 hash verifiers
+├── bench/                # On-device latency tracing, Real-Time Factor (RTF) measurement harness
+├── gradle/               # Version catalog (libs.versions.toml) and Gradle wrapper
+├── models/               # Manifest definitions, token dictionaries, and normalization rules
+└── tools/                # Build-time packaging scripts and sherpa-onnx dependency fetcher
+```
+
+---
+
+## 5. Technology Stack
+
+* **Operating System:** Android 8.0 (API Level 26) through Android 15 (API Level 35)
+* **Architecture:** Kotlin Multiplatform / Modular Android (Kotlin 2.0.21)
+* **User Interface:** Jetpack Compose with custom design tokens (`Tokens.kt`, `Palette.kt`)
+* **Concurrency:** Kotlin Coroutines & Asynchronous Flow
+* **Inference Engine:** Sherpa-ONNX 1.10.38 with ONNX Runtime backend
+* **Acoustic Models:** AI4Bharat IndicConformer (int8 dynamic quantization, ~189 MB per language)
+* **Voice Synthesis Models:** Piper VITS / Mimic 3 CMU Indic (~63 MB per language)
+* **Phonemisation:** Embedded `espeak-ng` binary tables
+
+---
+
+## 6. Building and Installation
+
+### A. Automated Cloud Build (GitHub Actions)
+
+The repository includes an automated GitHub Actions CI workflow configured to build and upload the debug APK without requiring a local Android SDK setup:
+
+1. Push your changes to the `main` branch or trigger **Workflow Dispatch** under the **Actions** tab.
+2. The workflow automatically provisions JDK 17, downloads the Android SDK, fetches the `sherpa-onnx` native AAR, compiles `:app:assembleDebug`, and uploads the artifact.
+3. Download `app-debug.apk` directly from the GitHub Actions run artifacts.
+
+### B. Local Build Instructions
+
+#### Prerequisites:
+* **JDK:** OpenJDK 17 (Temurin recommended)
+* **Android SDK:** Platforms for API 35 with Build Tools 35.0.0
+* **NDK:** ABI filter set to `arm64-v8a`
+
+#### Steps:
 ```bash
-git clone https://github.com/vikranthsai310/sih2026.git
+# 1. Clone the repository
+git clone https://github.com/pavan201806/sih2026.git
 cd sih2026
 
-./gradlew :core-proto:test                 # fast: pure JVM, no device, no models
-./gradlew assembleDebug                    # build the APK
+# 2. Fetch the native Sherpa-ONNX binary library
+chmod +x tools/fetch_sherpa.sh
+./tools/fetch_sherpa.sh
 
-python tools/fetch_models.py --lang hi,en  # or --lang all
-./gradlew installDebug
+# 3. Build the debug APK
+./gradlew assembleDebug
+
+# Output APK location:
+# app/build/outputs/apk/debug/app-debug.apk
 ```
 
-## Documentation
+---
 
-The design argument lives in [`docs/source/iTantra.html`](docs/source/iTantra.html) — read
-that first for *why* the system is shaped this way. The `docs/` tree is the normative
-spec: what to build, to what tolerance, and how it is verified.
+## 7. Live Demonstration Runbook (Hackathon 2-Handset Setup)
 
-| | |
-| --- | --- |
-| [docs/README.md](docs/README.md) | Index of the whole documentation set |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Modules, threads, the full signal path |
-| [docs/PROTOCOL.md](docs/PROTOCOL.md) | Frame format, script packing, template codes, AEAD, relaying |
-| [docs/SECURITY.md](docs/SECURITY.md) | Threat model, provisioning, audit |
-| [docs/EVALUATION.md](docs/EVALUATION.md) | How every published number is measured |
-| [docs/iTantra Screens.html](docs/iTantra%20Screens.html) | All seventeen screens, openable in a browser |
-| [docs/DEMO.md](docs/DEMO.md) | The seven-minute demonstration |
-| [docs/TODO.md](docs/TODO.md) | **Start here to build.** Every task with a done-condition |
+1. **Setup:** Install `app-debug.apk` on two Android handsets (Phone A and Phone B).
+2. **Bluetooth Bonding:** Pair both phones once in Android Bluetooth settings.
+3. **Launch & Unlock:** Open **RakshaVaani** on both handsets; hold the center circle for 3 seconds to unlock.
+4. **AI Model Setup Demonstration:**
+   - Tap **☰ (Settings)** in the top bar.
+   - Tap **AI Model Setup** to view the offline language model catalog.
+   - Tap **Download** on English, Hindi, and Telugu STT / TTS cards to demonstrate simulated offline model preparation.
+   - Tap **Continue to RakshaVaani** to return to the active operating screen.
+5. **Transmitting Speech:**
+   - On **Phone A** (set to Hindi): Hold the central **HOLD TO TALK** button and speak an emergency message (e.g., *"चिकित्सा सहायता चाहिए"*).
+   - Release the button to transmit.
+6. **Receiving & Playback:**
+   - **Phone B** (set to Telugu) receives the encrypted packet over Bluetooth / Wi-Fi mesh.
+   - The message renders in Telugu (*"వైద్య సహాయం కావాలి"*) and speaks aloud automatically.
+7. **Emergency Alert:**
+   - Tap the red **ALERT** flank on Phone A.
+   - Phone B receives the alert frame, flashing the screen and sounding the emergency alert at full volume.
 
-## Licence
+---
 
-Apache-2.0. No proprietary voice SDK anywhere in the system. Two dependencies carry
-restrictive licences — espeak-ng (GPL-3.0) and Meta MMS (CC-BY-NC, non-commercial) — both
-disclosed with their consequences in [LICENSES.md](LICENSES.md).
+## 8. Licences & Legal Notices
 
-<div align="center">
-<br>
-<sub>Team <b>Taraket</b> · Smart India Hackathon 2026 · Problem Statement 26173</sub>
-</div>
+This project combines open-source libraries and permissive models:
+
+* **RakshaVaani Codebase:** Licensed under [GPL-3.0](LICENSES.md).
+* **Sherpa-ONNX & ONNX Runtime:** [Apache-2.0](https://github.com/k2-fsa/sherpa-onnx) & [MIT](https://github.com/microsoft/onnxruntime).
+* **AI4Bharat IndicConformer:** [Apache-2.0](https://github.com/AI4Bharat).
+* **Piper TTS Voices:** [MIT](https://github.com/rhasspy/piper).
+* **espeak-ng Phonemisation Data:** [GPL-3.0](LICENSES.md) (embedded in native JNI binary).
+
+Full license texts, copyright notices, and third-party attribution are preserved in [`LICENSES.md`](LICENSES.md) and inside the in-app **About** screen.

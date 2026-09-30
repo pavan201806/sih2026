@@ -157,7 +157,7 @@ fun adviceFor(reason: EngineState.Degraded.Reason): DegradedAdvice =
                 // Bonding is a prerequisite this application deliberately does not do for
                 // the operator — W6.11 — so the banner has to say so, or the screen reads
                 // as broken when it is merely alone.
-                doThis = "Pair the other handset in Bluetooth settings and open iTantra on it.",
+                doThis = "Pair the other handset in Bluetooth settings and open RakshaVaani on it.",
                 recoversItself = false,
             )
 
@@ -167,7 +167,7 @@ fun adviceFor(reason: EngineState.Degraded.Reason): DegradedAdvice =
                 // Named where Android actually puts it. Once refused, the request
                 // dialog does not reappear, so pointing at Settings is the only
                 // instruction that works.
-                doThis = "Allow Nearby devices in Settings, Apps, iTantra, Permissions.",
+                doThis = "Allow Nearby devices in Settings, Apps, RakshaVaani, Permissions.",
                 recoversItself = false,
             )
 

@@ -134,7 +134,7 @@ fun HoldScreen(
         verticalArrangement = Arrangement.Center,
     ) {
         Text(
-            "iTantra",
+            "RakshaVaani",
             fontSize = Tokens.Title,
             fontWeight = FontWeight.Bold,
             color = p.ink,

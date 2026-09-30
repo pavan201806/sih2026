@@ -163,7 +163,7 @@ class ReportExport(private val context: Context) {
                             put(MediaStore.MediaColumns.MIME_TYPE, "text/csv")
                             put(
                                 MediaStore.MediaColumns.RELATIVE_PATH,
-                                "${Environment.DIRECTORY_DOWNLOADS}/iTantra",
+                                "${Environment.DIRECTORY_DOWNLOADS}/RakshaVaani",
                             )
                         }
                     val uri =
@@ -172,7 +172,7 @@ class ReportExport(private val context: Context) {
                             values,
                         ) ?: return@runCatching null
                     context.contentResolver.openOutputStream(uri)?.use { it.write(body.toByteArray()) }
-                    "Download/iTantra"
+                    "Download/RakshaVaani"
                 }.getOrNull()
             }
         if (viaStore != null) return viaStore

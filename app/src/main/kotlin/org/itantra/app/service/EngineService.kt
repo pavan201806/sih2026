@@ -279,7 +279,7 @@ class EngineService : LifecycleService() {
                 // LOW: visible and persistent, but never makes a sound. This runs for hours.
                 NotificationManager.IMPORTANCE_LOW,
             ).apply {
-                description = "Shows that iTantra is relaying for other units"
+                description = "Shows that RakshaVaani is relaying for other units"
                 setShowBadge(false)
                 enableVibration(false)
                 setSound(null, null)

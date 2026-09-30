@@ -180,6 +180,15 @@ private fun controlRoomRows(
             if (storedBytes > 0) megabytes(storedBytes) else "—",
         ),
         ControlRow(
+            Destination.MODEL_SETUP,
+            Icons.Download,
+            p.mint.core,
+            "AI Model Setup",
+            "Demo Setup",
+            mono = false,
+            valueInk = p.mint.deep,
+        ),
+        ControlRow(
             Destination.UNIT_NAME,
             Icons.Transmit,
             p.mint.core,
