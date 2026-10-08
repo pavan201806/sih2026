@@ -1,206 +1,605 @@
+<div align="center">
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/sih-2026-dark.png">
+  <img src="docs/assets/sih-2026.png" alt="Smart India Hackathon 2026" width="430">
+</picture>
+
+<br><br>
+
 # RakshaVaani (रक्षावाणी)
-### Offline-First Multilingual Mesh Voice Communication for Disaster Relief
 
-[![Build APK](https://github.com/pavan201806/sih2026/actions/workflows/build-apk.yml/badge.svg)](https://github.com/pavan201806/sih2026/actions/workflows/build-apk.yml)
-[![Android](https://img.shields.io/badge/Platform-Android_8.0+_(API_26–35)-3DDC84?logo=android&logoColor=white)](https://developer.android.com)
-[![Kotlin](https://img.shields.io/badge/Language-Kotlin_2.0-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org)
-[![Licence](https://img.shields.io/badge/Licence-GPL--3.0_/_Apache--2.0-blue.svg)](LICENSES.md)
+**Offline-First Multilingual Emergency Communication System**<br>
+*Voice Communication Without Internet or Cellular Networks*
+
+Smart India Hackathon 2026 · Team **StarkDynamics** · GMR Institute of Technology
+
+<br>
+
+![Platform](https://img.shields.io/badge/Platform-Android_8.0%2B-3DDC84?logo=android&logoColor=white)
+![Language](https://img.shields.io/badge/Language-Kotlin-7F52FF?logo=kotlin&logoColor=white)
+![Offline](https://img.shields.io/badge/Runtime-100%25_Offline-149447)
+![Languages](https://img.shields.io/badge/Languages-10-F48C22)
+![STT](https://img.shields.io/badge/STT-On--Device_AI-415861)
+![TTS](https://img.shields.io/badge/TTS-Offline-415861)
+
+<br>
+
+<img src="docs/assets/mesh.svg"
+     alt="RakshaVaani offline emergency communication mesh"
+     width="100%">
+
+</div>
+
+<br>
+
+> **When the network disappears, communication should not.**
+
+RakshaVaani is an **offline-first multilingual emergency communication system** designed for disaster situations where cellular networks, internet connectivity, and conventional communication infrastructure may be unavailable.
+
+Instead of transmitting voice recordings, RakshaVaani processes speech **on the device**, converts it into compact text data, securely transmits that data through available local radio technologies, and reconstructs the message as speech on the receiving device.
+
+No internet. No SIM card. No cloud server.
 
 ---
 
-## 1. Executive Summary
+## Why RakshaVaani?
 
-During natural disasters (floods, cyclones, earthquakes, and landslides), commercial telecom infrastructure (cellular towers, fiber backhauls, and power grids) suffers total collapse within hours. First responders and stranded civilians face two critical bottlenecks:
+During floods, cyclones, earthquakes, landslides, and other emergencies, communication infrastructure can become unreliable or completely unavailable.
 
-1. **Zero Connectivity:** Standard VoIP and messaging applications fail completely without internet or active SIM cards.
-2. **Language Barriers:** Rescue teams deployed across different Indian states often cannot comprehend regional dialects or scripts under high-stress emergency conditions.
+Emergency communication faces two major challenges:
 
-**RakshaVaani** is a resilient, 100% offline emergency communication system designed for entry-tier Android handsets. It transforms commodity smartphones into an autonomous voice-and-data mesh network without cell towers, Wi-Fi routers, or internet access.
+1. **Connectivity failure** — conventional messaging and calling applications depend on cellular or internet infrastructure.
+2. **Language barriers** — responders and affected people may speak different Indian languages, making rapid communication difficult during emergencies.
 
-By pairing **on-device neural Speech-to-Text (STT)**, **compact wire-frame encoding (< 52 bytes per sentence)**, **AES-256-GCM mesh transport**, and **offline Text-to-Speech (TTS) synthesis**, RakshaVaani allows a responder to speak in their native tongue and have it spoken aloud on peer handsets in the recipient's chosen regional language.
+RakshaVaani addresses both problems by combining:
+
+- On-device Speech-to-Text
+- Compact text-based communication
+- Offline radio-based connectivity
+- Store-and-forward relay
+- Offline Text-to-Speech
+- Multilingual communication
+- Emergency alerts
+- Secure message transmission
 
 ---
 
-## 2. System Architecture & End-to-End Pipeline
+## How It Works
 
-```text
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│                           SENDER HANDSET (Phone A)                             │
-│                                                                                 │
-│   [ Micro ] ──► [ AudioCapture ] ──► [ AI4Bharat IndicConformer ]              │
-│   16 kHz PCM     100 ms chunks        Streaming ASR (int8 ONNX)                 │
-│                                                    │                            │
-│                                                    ▼                            │
-│   [ AES-256-GCM ] ◄── [ FrameCodec ] ◄── [ Clause Segmenter ]                  │
-│    Sealed Payload      < 52 B frame       Semantic Text Chunking                │
-└──────────────────────────────────────┬──────────────────────────────────────────┘
-                                       │
-                     OFFLINE MULTI-RADIO AD-HOC MESH
-           (Bluetooth RFCOMM · BLE 5.0 Broadcast · Wi-Fi Direct P2P)
-                                       │
-                                       ▼
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│                          RELAY NODE (Phone B - Optional)                        │
-│                                                                                 │
-│   [ Incoming Frame ] ──► [ Deduplication ] ──► [ TTL Decrement ] ──► [ Re-TX ] │
-│                           Seen-Set Cache        TTL > 0              Jittered   │
-└──────────────────────────────────────┬──────────────────────────────────────────┘
-                                       │
-                                       ▼
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│                          RECEIVER HANDSET (Phone C)                             │
-│                                                                                 │
-│   [ FrameCodec ] ──► [ AES-256-GCM ] ──► [ TextNormaliser ]                     │
-│    De-framing         Verified Decrypt    Numerals & Lexicon Mapping            │
-│                                                    │                            │
-│                                                    ▼                            │
-│   [ Loudspeaker ] ◄── [ AudioSink ] ◄─── [ Piper / VITS TTS ]                  │
-│    Emergency Voice     AudioTrack Stream   On-Device Neural Synthesis           │
-└─────────────────────────────────────────────────────────────────────────────────┘
+RakshaVaani follows a **Speech → Text → Radio → Text → Speech** pipeline.
+
+```mermaid
+flowchart LR
+    A["🎙️ Speak"] --> B["On-Device STT"]
+    B --> C["Text Processing"]
+    C --> D["Compact Frame"]
+    D --> E["Encrypted Packet"]
+
+    E -->|"Bluetooth / Wi-Fi Direct / Local Radio"| F["Receiver"]
+
+    F --> G["Decrypt & Decode"]
+    G --> H["Text Processing"]
+    H --> I["Offline TTS"]
+    I --> J["🔊 Hear"]
 ```
 
-### Transmission Levels
-1. **Level 1 (Direct Speech Frame):** The speaker's voice is transcribed into text by an on-device int8 quantized neural model, packaged into an ultra-compact binary packet (~30–50 bytes), sealed with AES-256-GCM, and transmitted over ad-hoc radios.
-2. **Level 2 (Emergency Alert):** High-priority alerts bypass transmit queues, trigger instant non-interruptible playback at maximum volume on receiving handsets, and flash the screen.
-3. **Level 3 (Template Code - 1 Byte):** When acoustic models are not installed or in severe RF degradation, 1-byte pre-compiled emergency operational codes (e.g., *"Medical assistance required urgently"*) are transmitted and synthesized locally in any of the 10 supported regional languages.
+The important design principle is that **audio itself does not need to cross the communication link**.
+
+Speech is converted to text locally. Only the compact representation is transmitted. The receiver then converts the received message back into speech using its local TTS engine.
 
 ---
 
-## 3. Key Capabilities
+## Key Capabilities
 
-* **100% Offline by Design:** No cellular data, no internet permission, no cloud servers, and no SIM card required.
-* **Multilingual Coverage:** Architected for 10 Scheduled Indian languages:
-  * **Hindi (हिन्दी)**
-  * **Telugu (తెలుగు)**
-  * **Tamil (தமிழ்)**
-  * **Marathi (मराठी)**
-  * **Bengali (বাংলা)**
-  * **Gujarati (ગુજરાતી)**
-  * **Kannada (ಕನ್ನಡ)**
-  * **Malayalam (മലയാളം)**
-  * **Odia (ଓଡ଼ିଆ)**
-  * **English**
-* **Multi-Radio Mesh Network:**
-  * **Bluetooth RFCOMM (Classic):** Auto-dialing and connection establishment across bonded handsets.
-  * **BLE 5.0 Extended Advertising:** Connectionless, zero-handshake radio broadcasts (`OnAirBuffer`).
-  * **Wi-Fi Direct P2P:** Autonomous group-owner negotiation without opening Android system settings.
-  * **UDP Subnet Broadcast:** High-throughput local network datagrams across Wi-Fi hotspots.
-* **Store-and-Forward Mesh Relaying:**
-  * 3-bit TTL (up to 7 relay hops).
-  * Cyclic sequence tracking with a 512-entry sliding seen-set cache to eliminate packet storms.
-  * Randomized transmission jitter (20–100 ms) preventing RF packet collisions.
-* **Security & Authenticity:**
-  * AES-256-GCM authenticated encryption.
-  * 12-byte unencrypted frame header authenticated as Additional Authenticated Data (AAD).
-  * Monotonic epoch counters mitigating replay attacks.
-* **Tactical Emergency Features:**
-  * **3-Second Lock Gate:** Prevents accidental pocket triggers under adverse conditions.
-  * **DND-Bypassing Siren:** Maximum volume emergency acoustic alarm for immediate awareness.
-  * **Acoustic Direction Finder (`LOCATE`):** Measures radio RSSI and emits acoustic cadence feedback to locate trapped team members.
-  * **Sunlight-Optimised UI:** High-contrast monochrome & spectrum design system strictly adhering to WCAG AAA contrast ratios with full Indic script line-box padding.
+### 🌐 100% Offline Communication
+
+RakshaVaani is designed to operate without:
+
+- Internet connectivity
+- Cellular data
+- SIM cards
+- Cloud servers
+- Conventional telecom infrastructure
+
+The communication pipeline is designed to remain local to the participating devices.
+
+### 🗣️ Multilingual Communication
+
+The system is designed around support for **10 languages**:
+
+| Language | Support |
+| --- | :---: |
+| English | ✓ |
+| Hindi | ✓ |
+| Telugu | ✓ |
+| Tamil | ✓ |
+| Marathi | ✓ |
+| Bengali | ✓ |
+| Gujarati | ✓ |
+| Kannada | ✓ |
+| Malayalam | ✓ |
+| Odia | ✓ |
+
+This allows emergency messages to be communicated across different regional language preferences.
+
+### 📡 Offline Mesh Communication
+
+RakshaVaani can use local communication technologies such as:
+
+- Bluetooth
+- BLE
+- Wi-Fi Direct
+- Local Wi-Fi communication
+- Radio interfaces such as LoRa where available
+
+The architecture also supports **store-and-forward relay**, allowing an intermediate device to forward a message when the sender and final receiver cannot communicate directly.
+
+```text
+PHONE A
+  │
+  │ Direct connection
+  ▼
+PHONE B
+  │
+  │ Relay
+  ▼
+PHONE C
+```
+
+### 🚨 Emergency Alerts
+
+Emergency alerts are treated as high-priority communication.
+
+The system can provide:
+
+- Immediate alert delivery
+- High-priority playback
+- Visual alert indication
+- Emergency acoustic notification
+
+### 📍 Locate
+
+RakshaVaani includes a **LOCATE** concept for helping users identify the direction/proximity of another participating device using radio signal information and acoustic feedback.
+
+### 🔐 Secure Communication
+
+The communication architecture uses:
+
+**AES-256-GCM authenticated encryption**
+
+This provides confidentiality and integrity for transmitted messages and helps prevent unauthorized message injection or modification.
 
 ---
 
-## 4. Multi-Module Project Structure
+## System Architecture
 
-The project is structured into 8 modular Kotlin/Android modules for strict separation of concerns:
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                       SENDER PHONE                          │
+│                                                             │
+│  Microphone                                                │
+│      │                                                      │
+│      ▼                                                      │
+│  Audio Capture                                              │
+│      │                                                      │
+│      ▼                                                      │
+│  On-Device Speech-to-Text                                  │
+│      │                                                      │
+│      ▼                                                      │
+│  Text Processing / Segmentation                             │
+│      │                                                      │
+│      ▼                                                      │
+│  Compact Frame Encoding                                     │
+│      │                                                      │
+│      ▼                                                      │
+│  AES-256-GCM Encryption                                     │
+└──────────────────────┬──────────────────────────────────────┘
+                       │
+                       │ Offline Radio Link
+                       │
+          Bluetooth / BLE / Wi-Fi Direct
+                       │
+                       ▼
+              ┌───────────────────┐
+              │   OPTIONAL RELAY  │
+              │                   │
+              │ Deduplicate       │
+              │ TTL / Hop Control │
+              │ Forward           │
+              └─────────┬─────────┘
+                        │
+                        ▼
+┌─────────────────────────────────────────────────────────────┐
+│                      RECEIVER PHONE                         │
+│                                                             │
+│  Receive Frame                                               │
+│      │                                                      │
+│      ▼                                                      │
+│  Decrypt & Decode                                            │
+│      │                                                      │
+│      ▼                                                      │
+│  Text Processing                                              │
+│      │                                                      │
+│      ▼                                                      │
+│  Offline Text-to-Speech                                      │
+│      │                                                      │
+│      ▼                                                      │
+│  🔊 Emergency Voice Output                                  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Transmission Levels
+
+### Level 1 — Normal Speech Communication
+
+The speaker's voice is processed locally by the STT engine.
+
+```text
+Speech
+   ↓
+STT
+   ↓
+Text
+   ↓
+Compact Frame
+   ↓
+Encryption
+   ↓
+Radio Transmission
+```
+
+The receiver performs the reverse operation and produces speech using offline TTS.
+
+### Level 2 — Emergency Alert
+
+Emergency alerts receive higher priority than normal communication and can trigger immediate visual and acoustic notification on receiving devices.
+
+### Level 3 — Emergency Template Messages
+
+For predefined emergency situations, compact template-based messages can be used to reduce the amount of data that needs to be transmitted.
+
+Examples include:
+
+- Medical assistance required
+- Emergency evacuation
+- Fire detected
+- Need rescue
+- Location assistance required
+
+---
+
+## Mesh Relay
+
+A key feature of RakshaVaani is the ability to use participating devices as relay nodes.
+
+```mermaid
+flowchart LR
+    A["Sender"] --> B["Relay 1"]
+    B --> C["Relay 2"]
+    C --> D["Receiver"]
+```
+
+Each relay can:
+
+1. Receive the packet.
+2. Check whether it has already been seen.
+3. Apply hop/TTL rules.
+4. Forward the packet when required.
+
+This makes it possible to extend communication beyond the direct radio range of a single handset.
+
+---
+
+## Technology Stack
+
+| Layer | Technology |
+| --- | --- |
+| Platform | Android |
+| Language | Kotlin |
+| UI | Jetpack Compose |
+| Speech Recognition | On-device Indic STT |
+| Speech Synthesis | Offline TTS |
+| Inference | Sherpa-ONNX / ONNX Runtime |
+| Audio | Android Audio APIs |
+| Communication | Bluetooth / BLE / Wi-Fi Direct |
+| Security | AES-256-GCM |
+| Architecture | Modular Android |
+| Build | Gradle |
+
+---
+
+## AI Pipeline
+
+### Speech-to-Text
+
+RakshaVaani uses lightweight, on-device speech recognition so that speech can be converted to text without sending audio to a remote server.
+
+The target pipeline is:
+
+```text
+Microphone
+    ↓
+Audio Capture
+    ↓
+Streaming STT
+    ↓
+Recognised Text
+```
+
+### Text-to-Speech
+
+Received text is synthesized locally:
+
+```text
+Received Text
+    ↓
+Text Normalisation
+    ↓
+Offline TTS
+    ↓
+Audio Output
+```
+
+This keeps the complete communication loop independent of cloud services.
+
+---
+
+## Project Structure
+
+The project follows a modular Android architecture.
 
 ```text
 sih2026/
-├── app/                  # Main Android UI (Jetpack Compose), Foreground Services, Platform Bindings
-├── core-proto/           # Binary frame codecs, AES-256-GCM cipher, Mesh router, Template catalog
-├── core-audio/           # 16 kHz PCM AudioRecord capture, Ring buffers, AudioTrack sink
-├── core-asr/             # Sherpa-ONNX streaming IndicConformer speech recognition interface
-├── core-tts/             # Sherpa-ONNX VITS speech synthesis, text normalisation, Hindi numerals
-├── core-link/            # Radio link implementations (Bluetooth RFCOMM, BLE Broadcast, Wi-Fi Direct)
-├── core-models/          # Emergency lexicons, install manifests, SHA-256 hash verifiers
-├── bench/                # On-device latency tracing, Real-Time Factor (RTF) measurement harness
-├── gradle/               # Version catalog (libs.versions.toml) and Gradle wrapper
-├── models/               # Manifest definitions, token dictionaries, and normalization rules
-└── tools/                # Build-time packaging scripts and sherpa-onnx dependency fetcher
+│
+├── app/                  # Main Android application and UI
+│
+├── core-proto/           # Frame encoding, decoding and security
+│
+├── core-audio/           # Audio capture and playback
+│
+├── core-asr/             # Speech-to-Text integration
+│
+├── core-tts/             # Text-to-Speech integration
+│
+├── core-link/            # Offline communication transports
+│
+├── core-models/          # AI model and language resources
+│
+├── bench/                # Performance and latency testing
+│
+├── models/               # Model manifests and language data
+│
+├── tools/                # Build and model utilities
+│
+└── docs/                 # Documentation and design assets
 ```
 
 ---
 
-## 5. Technology Stack
+## Build & Installation
 
-* **Operating System:** Android 8.0 (API Level 26) through Android 15 (API Level 35)
-* **Architecture:** Kotlin Multiplatform / Modular Android (Kotlin 2.0.21)
-* **User Interface:** Jetpack Compose with custom design tokens (`Tokens.kt`, `Palette.kt`)
-* **Concurrency:** Kotlin Coroutines & Asynchronous Flow
-* **Inference Engine:** Sherpa-ONNX 1.10.38 with ONNX Runtime backend
-* **Acoustic Models:** AI4Bharat IndicConformer (int8 dynamic quantization, ~189 MB per language)
-* **Voice Synthesis Models:** Piper VITS / Mimic 3 CMU Indic (~63 MB per language)
-* **Phonemisation:** Embedded `espeak-ng` binary tables
+### Prerequisites
 
----
+Install:
 
-## 6. Building and Installation
+- JDK 17+
+- Android SDK
+- Android Studio
+- Android SDK Platform required by the project
+- Android device for testing
 
-### A. Automated Cloud Build (GitHub Actions)
+### Clone the Repository
 
-The repository includes an automated GitHub Actions CI workflow configured to build and upload the debug APK without requiring a local Android SDK setup:
-
-1. Push your changes to the `main` branch or trigger **Workflow Dispatch** under the **Actions** tab.
-2. The workflow automatically provisions JDK 17, downloads the Android SDK, fetches the `sherpa-onnx` native AAR, compiles `:app:assembleDebug`, and uploads the artifact.
-3. Download `app-debug.apk` directly from the GitHub Actions run artifacts.
-
-### B. Local Build Instructions
-
-#### Prerequisites:
-* **JDK:** OpenJDK 17 (Temurin recommended)
-* **Android SDK:** Platforms for API 35 with Build Tools 35.0.0
-* **NDK:** ABI filter set to `arm64-v8a`
-
-#### Steps:
 ```bash
-# 1. Clone the repository
 git clone https://github.com/pavan201806/sih2026.git
 cd sih2026
+```
 
-# 2. Fetch the native Sherpa-ONNX binary library
-chmod +x tools/fetch_sherpa.sh
-./tools/fetch_sherpa.sh
+### Build the APK
 
-# 3. Build the debug APK
+```bash
 ./gradlew assembleDebug
+```
 
-# Output APK location:
-# app/build/outputs/apk/debug/app-debug.apk
+On Windows:
+
+```powershell
+.\gradlew.bat assembleDebug
+```
+
+The generated debug APK will be available under:
+
+```text
+app/build/outputs/apk/debug/
 ```
 
 ---
 
-## 7. Live Demonstration Runbook (Hackathon 2-Handset Setup)
+## Demo Setup
 
-1. **Setup:** Install `app-debug.apk` on two Android handsets (Phone A and Phone B).
-2. **Bluetooth Bonding:** Pair both phones once in Android Bluetooth settings.
-3. **Launch & Unlock:** Open **RakshaVaani** on both handsets; hold the center circle for 3 seconds to unlock.
-4. **AI Model Setup Demonstration:**
-   - Tap **☰ (Settings)** in the top bar.
-   - Tap **AI Model Setup** to view the offline language model catalog.
-   - Tap **Download** on English, Hindi, and Telugu STT / TTS cards to demonstrate simulated offline model preparation.
-   - Tap **Continue to RakshaVaani** to return to the active operating screen.
-5. **Transmitting Speech:**
-   - On **Phone A** (set to Hindi): Hold the central **HOLD TO TALK** button and speak an emergency message (e.g., *"चिकित्सा सहायता चाहिए"*).
-   - Release the button to transmit.
-6. **Receiving & Playback:**
-   - **Phone B** (set to Telugu) receives the encrypted packet over Bluetooth / Wi-Fi mesh.
-   - The message renders in Telugu (*"వైద్య సహాయం కావాలి"*) and speaks aloud automatically.
-7. **Emergency Alert:**
-   - Tap the red **ALERT** flank on Phone A.
-   - Phone B receives the alert frame, flashing the screen and sounding the emergency alert at full volume.
+RakshaVaani is designed to be demonstrated using multiple Android handsets.
+
+### 1. Install
+
+Install the APK on two or more Android devices.
+
+### 2. Prepare Devices
+
+Enable the required local communication technology such as Bluetooth or Wi-Fi Direct.
+
+### 3. Configure Language
+
+Select the required language on each device.
+
+Example:
+
+```text
+Phone A → Hindi
+Phone B → Telugu
+```
+
+### 4. Send a Message
+
+The sender holds the **HOLD TO TALK** control and speaks an emergency message.
+
+```text
+Hindi Speech
+     ↓
+Hindi STT
+     ↓
+Compact Message
+     ↓
+Offline Transmission
+```
+
+### 5. Receive
+
+The receiving device processes the message locally.
+
+```text
+Received Packet
+      ↓
+Decryption
+      ↓
+Text
+      ↓
+Telugu TTS
+      ↓
+Telugu Speech
+```
+
+### 6. Emergency Alert
+
+The sender can trigger an emergency alert that receives priority treatment on connected devices.
 
 ---
 
-## 8. Licences & Legal Notices
+## Design Goals
 
-This project combines open-source libraries and permissive models:
+RakshaVaani is designed around five principles:
 
-* **RakshaVaani Codebase:** Licensed under [GPL-3.0](LICENSES.md).
-* **Sherpa-ONNX & ONNX Runtime:** [Apache-2.0](https://github.com/k2-fsa/sherpa-onnx) & [MIT](https://github.com/microsoft/onnxruntime).
-* **AI4Bharat IndicConformer:** [Apache-2.0](https://github.com/AI4Bharat).
-* **Piper TTS Voices:** [MIT](https://github.com/rhasspy/piper).
-* **espeak-ng Phonemisation Data:** [GPL-3.0](LICENSES.md) (embedded in native JNI binary).
+### 1. Offline First
 
-Full license texts, copyright notices, and third-party attribution are preserved in [`LICENSES.md`](LICENSES.md) and inside the in-app **About** screen.
+Communication should continue even when conventional networks fail.
+
+### 2. Lightweight Communication
+
+Transmit **meaning rather than raw audio** whenever possible.
+
+### 3. Multilingual by Design
+
+Emergency communication should not depend on everyone speaking the same language.
+
+### 4. Resilient Networking
+
+Multiple devices should be able to cooperate as relay nodes.
+
+### 5. Resource Efficient
+
+The system should be practical for entry-level Android hardware rather than requiring flagship devices.
+
+---
+
+## Security
+
+RakshaVaani uses authenticated encryption for communication.
+
+### AES-256-GCM
+
+The encrypted communication pipeline provides:
+
+- Confidentiality
+- Integrity
+- Authentication
+- Protection against unauthorized modification
+
+The mesh protocol also uses packet tracking and hop/TTL controls to reduce duplicate forwarding and uncontrolled packet propagation.
+
+---
+
+## Project Status
+
+RakshaVaani is being developed as a **Smart India Hackathon 2026** solution for offline emergency communication.
+
+The project currently includes the major components required for the prototype:
+
+- Android application
+- Offline STT pipeline
+- Offline TTS pipeline
+- Compact message transport
+- Offline communication interfaces
+- Emergency alert mechanism
+- Mesh relay architecture
+- Multilingual communication
+- Security layer
+- AI model setup interface
+- Demo workflow
+
+> **The project is intended as an emergency communication prototype and research/development system. Actual disaster deployment would require extensive field testing, radio certification where applicable, device compatibility validation, and safety verification.**
+
+---
+
+## Future Scope
+
+Potential future improvements include:
+
+- Improved low-resource Indian-language models
+- More efficient model quantisation
+- LoRa-based long-range communication
+- Multi-hop mesh optimisation
+- Automatic peer discovery
+- Improved indoor/outdoor locating
+- Lower end-to-end latency
+- More compact message encoding
+- Additional regional languages
+- Battery and thermal optimisation
+- Large-scale field testing
+
+---
+
+## Team
+
+<div align="center">
+
+### StarkDynamics
+
+**GMR Institute of Technology (GMRIT)**  
+Rajam, Andhra Pradesh, India
+
+| Role | Member |
+| --- | --- |
+| Team Leader | **A Pavankumar** |
+| Team Member | **Karthikeyan Srinivas** |
+| Team Member | **P Bharat Kumar** |
+| Team Member | **M Bharath Kumar** |
+| Team Member | **K Gunasri** |
+| Team Member | **K Kalyani** |
+
+**Smart India Hackathon 2026**
+
+</div>
+
+---
+
+## License
+
+See the project's license and third-party attribution files for the applicable licensing terms of the RakshaVaani codebase, models, and dependencies.
+
+---
+
+<div align="center">
+
+<br>
+
+**RakshaVaani — Communication when connectivity fails.**
+
+<br>
+
+**Team StarkDynamics**  
+Smart India Hackathon 2026  
+GMR Institute of Technology
+
+</div>
