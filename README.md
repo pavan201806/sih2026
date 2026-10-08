@@ -11,8 +11,7 @@
 
 **Offline-First Multilingual Emergency Communication System**<br>
 *Voice Communication When Connectivity Fails*
-
-Smart India Hackathon 2026 · Team **StarkDynamics** · GMR Institute of Technology
+GMR Institute of Technology
 
 <br>
 
